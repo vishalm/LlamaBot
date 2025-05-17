@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Interface</title>
+    <style>
+        /* Dark theme variables */
+        :root {
+            --bg-color: #1a1a1a;
+            --chat-bg: #2d2d2d;
+            --text-color: #e0e0e0;
+            --input-bg: #3d3d3d;
+            --border-color: #404040;
+            --button-bg: #4a4a4a;
+            --button-hover: #5a5a5a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+        }
+
+        /* Chat section (left 1/3) */
+        .chat-section {
+            width: 33.33%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border-color);
+        }
+
+        /* Message history area */
+        .message-history {
+            flex-grow: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            background-color: var(--chat-bg);
+        }
+
+        .message {
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            border-radius: 8px;
+            background-color: var(--input-bg);
+        }
+
+        /* Input area */
+        .input-area {
+            padding: 1rem;
+            background-color: var(--chat-bg);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .input-area input {
+            flex-grow: 1;
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+        }
+
+        .input-area button {
+            padding: 0.5rem 1rem;
+            background-color: var(--button-bg);
+            color: var(--text-color);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .input-area button:hover {
+            background-color: var(--button-hover);
+        }
+
+        /* IFrame section (right 2/3) */
+        .iframe-section {
+            width: 66.67%;
+            height: 100%;
+        }
+
+        .iframe-section iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background-color: var(--chat-bg);
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-section">
+        <div class="message-history">
+            <!-- Example messages -->
+            <div class="message">Welcome to the chat!</div>
+        </div>
+        <div class="input-area">
+            <input type="text" placeholder="Type your message..." id="messageInput">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+    <div class="iframe-section">
+        <iframe src="http://localhost:8000/page" title="Content Frame"></iframe>
+    </div>
+
+    <script>
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const messageText = input.value.trim();
+            
+            if (messageText) {
+                const messageHistory = document.querySelector('.message-history');
+                const newMessage = document.createElement('div');
+                newMessage.className = 'message';
+                newMessage.textContent = messageText;
+                messageHistory.appendChild(newMessage);
+
+                try {
+                    // Make GET request to FastAPI endpoint
+                    const response = await fetch('http://localhost:8000/');
+                    const data = await response.json();
+                    
+                    // Create and display server response
+                    const serverResponse = document.createElement('div');
+                    serverResponse.className = 'message';
+                    serverResponse.textContent = `Server response: ${data.message}`;
+                    messageHistory.appendChild(serverResponse);
+                } catch (error) {
+                    // Handle any errors
+                    const errorMessage = document.createElement('div');
+                    errorMessage.className = 'message';
+                    errorMessage.style.color = '#ff6b6b';
+                    errorMessage.textContent = 'Error: Could not connect to server';
+                    messageHistory.appendChild(errorMessage);
+                }
+                
+                // Auto scroll to bottom
+                messageHistory.scrollTop = messageHistory.scrollHeight;
+                
+                // Clear input
+                input.value = '';
+            }
+        }
+
+        // Allow Enter key to send message
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>

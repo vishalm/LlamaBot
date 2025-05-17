@@ -1,0 +1,273 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Snake Arcade Game</title>
+<style>
+  body {
+    background: #111;
+    color: #eee;
+    font-family: monospace, monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0;
+    height: 100vh;
+    justify-content: center;
+  }
+  h1 {
+    margin-bottom: 10px;
+  }
+  #game-container {
+    position: relative;
+    background: #222;
+    border: 3px solid #0f0;
+    border-radius: 8px;
+  }
+  canvas {
+    display: block;
+    background-color: #000;
+    image-rendering: pixelated;
+  }
+  #controls {
+    margin-top: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    user-select: none;
+  }
+  .button-row {
+    display: flex;
+    justify-content: center;
+    margin: 5px 0;
+  }
+  button.control-button {
+    background: #0a0;
+    border: none;
+    color: #0f0;
+    font-weight: bold;
+    font-size: 1.3rem;
+    width: 60px;
+    height: 60px;
+    margin: 0 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 0 8px #0f0;
+    transition: background-color 0.2s, color 0.2s;
+  }
+  button.control-button:active {
+    background: #0f0;
+    color: #030;
+    box-shadow: 0 0 15px #0f0;
+  }
+  #scoreboard {
+    margin-top: 12px;
+    font-size: 1.2rem;
+    letter-spacing: 1.2px;
+  }
+  #instructions {
+    margin-top: 15px;
+    font-size: 0.85rem;
+    color: #666;
+    text-align: center;
+    max-width: 320px;
+  }
+</style>
+</head>
+<body>
+<h1>Snake Arcade</h1>
+<div id="game-container">
+  <canvas id="game" width="320" height="320"></canvas>
+</div>
+<div id="scoreboard">Score: 0</div>
+<div id="controls">
+  <div class="button-row">
+    <button class="control-button" id="btn-up" aria-label="Up arrow">⬆</button>
+  </div>
+  <div class="button-row">
+    <button class="control-button" id="btn-left" aria-label="Left arrow">⬅</button>
+    <button class="control-button" id="btn-down" aria-label="Down arrow">⬇</button>
+    <button class="control-button" id="btn-right" aria-label="Right arrow">➡</button>
+  </div>
+</div>
+<div id="instructions">
+  Use your keyboard arrow keys or the buttons above to control the snake. Eat the green fruit to grow and score points. Don't run into yourself or the walls!
+</div>
+<script>
+(() => {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+
+  // Game config
+  const gridSize = 16; // Number of cells along width and height
+  const cellSize = canvas.width / gridSize;
+  const snakeColor = '#0f0';
+  const snakeHeadColor = '#7fff7f';
+  const fruitColor = '#ff0000';
+  const borderColor = '#0f0';
+  let snake;
+  let fruit;
+  let direction;
+  let nextDirection;
+  let score = 0;
+  let gameOver = false;
+  let updateInterval = 100; // ms
+
+  function resetGame() {
+    snake = [
+      { x: Math.floor(gridSize / 2), y: Math.floor(gridSize / 2) },
+      { x: Math.floor(gridSize / 2) - 1, y: Math.floor(gridSize / 2) },
+      { x: Math.floor(gridSize / 2) - 2, y: Math.floor(gridSize / 2) },
+    ];
+    direction = 'right';
+    nextDirection = direction;
+    placeFruit();
+    score = 0;
+    gameOver = false;
+    document.getElementById('scoreboard').textContent = 'Score: 0';
+  }
+
+  function placeFruit() {
+    while (true) {
+      const x = Math.floor(Math.random() * gridSize);
+      const y = Math.floor(Math.random() * gridSize);
+      if (!snake.some(s => s.x === x && s.y === y)) {
+        fruit = { x, y };
+        break;
+      }
+    }
+  }
+
+  function drawCell(x, y, color) {
+    ctx.fillStyle = color;
+    ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+  }
+
+  function drawGrid() {
+    // Clear canvas
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw border
+    ctx.strokeStyle = borderColor;
+    ctx.lineWidth = 3;
+    ctx.strokeRect(0, 0, canvas.width, canvas.height);
+  }
+
+  function drawSnake() {
+    snake.forEach((segment, index) => {
+      if (index === 0) {
+        drawCell(segment.x, segment.y, snakeHeadColor);
+      } else {
+        drawCell(segment.x, segment.y, snakeColor);
+      }
+    });
+  }
+
+  function drawFruit() {
+    drawCell(fruit.x, fruit.y, fruitColor);
+  }
+
+  function updateSnake() {
+    if (gameOver) return;
+
+    direction = nextDirection;
+
+    const head = { ...snake[0] };
+    switch(direction) {
+      case 'up': head.y -= 1; break;
+      case 'down': head.y += 1; break;
+      case 'left': head.x -= 1; break;
+      case 'right': head.x += 1; break;
+    }
+
+    // Check collisions with walls
+    if (
+      head.x < 0 || head.x >= gridSize ||
+      head.y < 0 || head.y >= gridSize
+    ) {
+      endGame();
+      return;
+    }
+
+    // Check collisions with self
+    if (snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+      endGame();
+      return;
+    }
+
+    snake.unshift(head);
+
+    // Check if fruit eaten
+    if (head.x === fruit.x && head.y === fruit.y) {
+      score++;
+      document.getElementById('scoreboard').textContent = 'Score: ' + score;
+      placeFruit();
+    } else {
+      snake.pop();
+    }
+  }
+
+  function endGame() {
+    gameOver = true;
+    setTimeout(() => {
+      alert(`Game Over! Your score is ${score}. Starting a new game.`);
+      resetGame();
+    }, 50);
+  }
+
+  function gameLoop() {
+    if (!gameOver) {
+      updateSnake();
+      drawGrid();
+      drawFruit();
+      drawSnake();
+    }
+  }
+
+  // Handle keyboard input
+  window.addEventListener('keydown', e => {
+    if (gameOver) return;
+    switch (e.key) {
+      case 'ArrowUp':
+        if (direction !== 'down') nextDirection = 'up';
+        e.preventDefault();
+        break;
+      case 'ArrowDown':
+        if (direction !== 'up') nextDirection = 'down';
+        e.preventDefault();
+        break;
+      case 'ArrowLeft':
+        if (direction !== 'right') nextDirection = 'left';
+        e.preventDefault();
+        break;
+      case 'ArrowRight':
+        if (direction !== 'left') nextDirection = 'right';
+        e.preventDefault();
+        break;
+    }
+  });
+
+  // Control buttons handlers
+  document.getElementById('btn-up').addEventListener('click', () => {
+    if (direction !== 'down') nextDirection = 'up';
+  });
+  document.getElementById('btn-down').addEventListener('click', () => {
+    if (direction !== 'up') nextDirection = 'down';
+  });
+  document.getElementById('btn-left').addEventListener('click', () => {
+    if (direction !== 'right') nextDirection = 'left';
+  });
+  document.getElementById('btn-right').addEventListener('click', () => {
+    if (direction !== 'left') nextDirection = 'right';
+  });
+
+  resetGame();
+  setInterval(gameLoop, updateInterval);
+})();
+</script>
+</body>
+</html>
+```
