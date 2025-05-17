@@ -3,432 +3,118 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Vibrant HTML Showcase</title>
+  <title>How to Use LlamaBot — Page Modification Guide</title>
   <style>
-    /* CSS Variables for Colors */
+    /* Dark Mode Variables */
     :root {
       --primary-color: #3498db;
       --secondary-color: #2ecc71;
       --accent-color: #e74c3c;
-      --highlight-color: #f1c40f;
-      --background-color: #f5f5f5;
-      --light-bg: #ffffff;
-      --dark-bg: #2c3e50;
-      --text-color: #333333;
-      --header-footer-text: #ecf0f1;
+      --background-color: #121212;
+      --light-bg: #1e1e1e;
+      --text-color: #e0e0e0;
       --border-radius: 6px;
       --transition-speed: 0.3s;
     }
-
-    /* Global Reset & Box Sizing */
-    *, *::before, *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      background-color: var(--background-color);
+      font-family: "Segoe UI", sans-serif;
+      background: var(--background-color);
       color: var(--text-color);
       line-height: 1.6;
     }
-
-    a {
-      color: var(--primary-color);
-      text-decoration: none;
-      transition: color var(--transition-speed);
-    }
-    a:hover {
-      color: var(--accent-color);
-      text-decoration: underline;
-    }
-
-    /* Header & Navigation */
+    a { color: var(--primary-color); text-decoration: none; transition: color var(--transition-speed); }
+    a:hover { color: var(--accent-color); }
     header {
-      background: var(--dark-bg);
-      color: var(--header-footer-text);
-      padding: 1.2rem;
+      background: var(--light-bg);
+      padding: 1rem;
       text-align: center;
     }
-    header h1 {
-      margin-bottom: 0.5rem;
-      font-size: 2rem;
-    }
-    nav ul {
-      list-style: none;
-      display: flex;
-      justify-content: center;
-      gap: 1.5rem;
-    }
-    nav a {
-      font-weight: bold;
-    }
-
-    /* Hero Section */
+    header h1 { font-size: 1.8rem; }
+    nav ul { list-style: none; display: flex; justify-content: center; gap: 1rem; margin-top: 0.5rem; }
+    nav a { font-weight: bold; }
     #hero {
-      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-      color: #fff;
-      padding: 4rem 1rem;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      padding: 3rem 1rem;
       text-align: center;
     }
-    #hero h2 {
-      font-size: 2.5rem;
-      margin-bottom: 1rem;
-    }
-    #hero p {
-      max-width: 600px;
-      margin: 0 auto 2rem;
-    }
+    #hero h2 { font-size: 2.2rem; color: #fff; margin-bottom: 0.5rem; }
+    #hero p { color: #f0f0f0; max-width: 600px; margin: 0 auto 1.5rem; }
     #hero .btn {
       background: var(--accent-color);
       color: #fff;
-      padding: 0.8rem 1.4rem;
-      border: none;
-      border-radius: var(--border-radius);
-      cursor: pointer;
-      font-size: 1rem;
-      transition: background var(--transition-speed);
-    }
-    #hero .btn:hover {
-      background: var(--highlight-color);
-    }
-
-    /* Main Grid Layout */
-    .container {
-      display: grid;
-      grid-template-columns: 3fr 1fr;
-      gap: 1.5rem;
-      padding: 2rem 1rem;
-    }
-
-    /* Article & Sections */
-    article, section {
-      background: var(--light-bg);
-      padding: 1.5rem;
-      border-radius: var(--border-radius);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      margin-bottom: 1.5rem;
-    }
-    article h3, section h3 {
-      color: var(--primary-color);
-      margin-bottom: 0.8rem;
-    }
-
-    /* Cards */
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px,1fr));
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
-    .card {
-      background: var(--light-bg);
-      border-left: 5px solid var(--secondary-color);
-      border-radius: var(--border-radius);
-      padding: 1rem;
-      transition: transform var(--transition-speed), border-color var(--transition-speed);
-    }
-    .card:hover {
-      transform: translateY(-4px);
-      border-color: var(--accent-color);
-    }
-    .card h4 {
-      margin-bottom: 0.5rem;
-    }
-    .card p {
-      font-size: 0.9rem;
-    }
-
-    /* Table */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 1rem;
-    }
-    table th, table td {
-      padding: 0.8rem;
-      border: 1px solid #ddd;
-      text-align: center;
-    }
-    table th {
-      background: var(--primary-color);
-      color: #fff;
-    }
-    table tr:nth-child(even) {
-      background: #f9f9f9;
-    }
-
-    /* Lists */
-    ul.colorful-list li::before {
-      content: "✔";
-      color: var(--highlight-color);
-      margin-right: 0.5rem;
-    }
-
-    /* Code Block */
-    pre {
-      background: #272822;
-      color: #f8f8f2;
-      padding: 1rem;
-      overflow-x: auto;
-      border-radius: var(--border-radius);
-      margin-bottom: 1rem;
-    }
-    code {
-      font-family: "Courier New", Courier, monospace;
-      color: #a6e22e;
-    }
-
-    /* Form */
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-    form label {
-      font-weight: bold;
-    }
-    form input, form select, form textarea {
-      padding: 0.6rem;
-      border: 1px solid #ccc;
-      border-radius: var(--border-radius);
-      width: 100%;
-    }
-    form button {
-      width: max-content;
-      background: var(--secondary-color);
-      color: #fff;
-      padding: 0.8rem 1.4rem;
+      padding: 0.6rem 1.2rem;
       border: none;
       border-radius: var(--border-radius);
       cursor: pointer;
       transition: background var(--transition-speed);
     }
-    form button:hover {
-      background: var(--accent-color);
-    }
-
-    /* Aside / Sidebar */
-    aside {
-      background: var(--light-bg);
-      padding: 1.5rem;
-      border-radius: var(--border-radius);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-    aside h3 {
-      color: var(--secondary-color);
-      margin-bottom: 0.8rem;
-    }
-    .social-links a {
-      display: inline-block;
-      margin-right: 0.5rem;
-      font-size: 1.4rem;
-      color: var(--primary-color);
-      transition: color var(--transition-speed);
-    }
-    .social-links a:hover {
-      color: var(--accent-color);
-    }
-
-    /* Footer */
-    footer {
-      background: var(--dark-bg);
-      color: var(--header-footer-text);
-      text-align: center;
-      padding: 1rem;
-      margin-top: 2rem;
-    }
-    footer p {
-      font-size: 0.9rem;
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      .container {
-        grid-template-columns: 1fr;
-      }
-      nav ul {
-        flex-direction: column;
-        gap: 0.6rem;
-      }
-    }
+    #hero .btn:hover { background: var(--secondary-color); }
+    .container { padding: 2rem 1rem; max-width: 900px; margin: 0 auto; }
+    section { background: var(--light-bg); padding: 1.5rem; border-radius: var(--border-radius); margin-bottom: 1.5rem; }
+    section h3 { color: var(--primary-color); margin-bottom: 1rem; }
+    pre { background: #212121; padding: 1rem; border-radius: var(--border-radius); overflow-x: auto; }
+    code { color: #a6e22e; font-family: monospace; }
+    ol, ul { margin-left: 1.2rem  }
   </style>
 </head>
 <body>
 
-  <!-- Header & Navigation -->
   <header>
-    <h1>Vibrant HTML Showcase</h1>
+    <h1>LlamaBot Usage Guide</h1>
     <nav>
       <ul>
-        <li><a href="#hero">Home</a></li>
-        <li><a href="#features">Features</a></li>
-        <li><a href="#gallery">Gallery</a></li>
-        <li><a href="#contact">Contact</a></li>
+        <li><a href="#guide">Guide</a></li>
+        <li><a href="#example">Example Prompt</a></li>
+        <li><a href="#tips">Tips</a></li>
       </ul>
     </nav>
   </header>
 
-  <!-- Hero Section -->
   <section id="hero">
-    <h2>Welcome to Our Colorful Page!</h2>
-    <p>Explore a blend of vivid colors, interactive components, and semantic HTML elements—crafted to demonstrate a full-featured, responsive layout.</p>
-    <button class="btn" onclick="document.getElementById('features').scrollIntoView()">Discover More</button>
+    <h2>Change Your Page with LlamaBot</h2>
+    <p>Learn how to instruct LlamaBot to modify your existing HTML/CSS—step by step.</p>
+    <button class="btn" onclick="document.getElementById('guide').scrollIntoView()">Get Started</button>
   </section>
 
-  <!-- Main Content + Sidebar -->
   <div class="container">
 
-    <!-- Main Articles & Sections -->
-    <main>
-      <!-- Features Cards -->
-      <section id="features">
-        <h3>Key Features</h3>
-        <div class="cards">
-          <div class="card">
-            <h4>Semantic HTML5</h4>
-            <p>Use of &lt;header&gt;, &lt;nav&gt;, &lt;section&gt;, &lt;article&gt;, &lt;aside&gt; and &lt;footer&gt; for clear structure.</p>
-          </div>
-          <div class="card">
-            <h4>Responsive Design</h4>
-            <p>Grid layout and media queries adapt content to any screen size.</p>
-          </div>
-          <div class="card">
-            <h4>Interactive Elements</h4>
-            <p>Buttons, forms, tables, code blocks and more—styled with animated hover effects.</p>
-          </div>
-        </div>
-      </section>
+    <section id="guide">
+      <h3>Step-by-Step Instructions</h3>
+      <ol>
+        <li><strong>Provide Context:</strong> Paste or describe your current HTML structure so LlamaBot understands where to apply changes.</li>
+        <li><strong>Specify the Change:</strong> Clearly state what you want—for example, “Update the hero section background to a gradient of #ff7e5f → #feb47b.”</li>
+        <li><strong>Review & Confirm:</strong> LlamaBot will return updated HTML. Review it, then integrate it into your page.</li>
+        <li><strong>Iterate:</strong> If you need tweaks, ask follow-up prompts like “Increase the button border radius to 12px.”</li>
+      </ol>
+    </section>
 
-      <!-- Gallery Section -->
-      <section id="gallery">
-        <h3>Image Gallery</h3>
-        <figure style="margin-bottom:1rem;">
-          <img src="https://via.placeholder.com/600x300/3498db/ffffff?text=Sample+Image+1" alt="Sample 1" style="width:100%;border-radius:var(--border-radius);">
-          <figcaption style="margin-top:0.5rem;font-size:0.9rem;color:#555;">Beautiful placeholder image with primary color.</figcaption>
-        </figure>
-        <figure>
-          <img src="https://via.placeholder.com/600x300/2ecc71/ffffff?text=Sample+Image+2" alt="Sample 2" style="width:100%;border-radius:var(--border-radius);">
-          <figcaption style="margin-top:0.5rem;font-size:0.9rem;color:#555;">Vibrant green accent sample image.</figcaption>
-        </figure>
-      </section>
+    <section id="example">
+      <h3>Example Prompt</h3>
+      <pre><code>Hi LlamaBot,
+Please modify my existing page so that:
+1. The header background becomes a dark gradient (#0f2027 → #203a43).
+2. The hero section headline reads “Welcome to My New Site!”.
+3. Add a drop-shadow under each card in the features section.
+4. Increase the font size of all &lt;h3&gt; headings to 1.6rem.
 
-      <!-- Data Table -->
-      <section id="table-section">
-        <h3>Sample Data Table</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Item</th>
-              <th>Quantity</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Apples</td>
-              <td>50</td>
-              <td>In Stock</td>
-            </tr>
-            <tr>
-              <td>Oranges</td>
-              <td>30</td>
-              <td>Low Stock</td>
-            </tr>
-            <tr>
-              <td>Bananas</td>
-              <td>0</td>
-              <td style="color: var(--accent-color);">Out of Stock</td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
-
-      <!-- Lists -->
-      <section id="list-section">
-        <h3>Lists Example</h3>
-        <ul class="colorful-list">
-          <li>First color-enhanced bullet</li>
-          <li>Second colorful item</li>
-          <li>Third vibrant list entry</li>
-        </ul>
-        <ol style="margin-top:1rem; padding-left:1.2rem;">
-          <li>Ordered item one</li>
-          <li>Ordered item two</li>
-          <li>Ordered item three</li>
-        </ol>
-      </section>
-
-      <!-- Code Snippet -->
-      <section id="code-section">
-        <h3>Code Snippet</h3>
-        <pre><code>&lt;div class="card"&gt;
-  &lt;h4&gt;Title&lt;/h4&gt;
-  &lt;p&gt;Description&lt;/p&gt;
-&lt;/div&gt;
+Here’s my current &lt;head&gt; and hero snippet:
+&lt;head&gt;…&lt;/head&gt;
+&lt;section id="hero"&gt;…&lt;/section&gt;
 </code></pre>
-      </section>
+    </section>
 
-      <!-- Contact Form -->
-      <section id="contact">
-        <h3>Contact Us</h3>
-        <form>
-          <label for="name">Name</label>
-          <input type="text" id="name" placeholder="Your full name">
-
-          <label for="email">Email</label>
-          <input type="email" id="email" placeholder="Your email">
-
-          <label for="topic">Topic</label>
-          <select id="topic">
-            <option>General Inquiry</option>
-            <option>Feedback</option>
-            <option>Support</option>
-          </select>
-
-          <label>Subscribe to Newsletter?</label>
-          <div style="display:flex;gap:1rem;">
-            <label><input type="radio" name="subscribe" value="yes"> Yes</label>
-            <label><input type="radio" name="subscribe" value="no"> No</label>
-          </div>
-
-          <label for="message">Message</label>
-          <textarea id="message" rows="4" placeholder="Write your message here..."></textarea>
-
-          <button type="submit">Send Message</button>
-        </form>
-      </section>
-    </main>
-
-    <!-- Sidebar / Aside -->
-    <aside>
-      <h3>About This Page</h3>
-      <p>This demo showcases a colorful, well-structured HTML5 layout with responsive design, interactive components, and semantic markup.</p>
-      <h3>Stay Connected</h3>
-      <div class="social-links">
-        <a href="#" title="Twitter">🐦</a>
-        <a href="#" title="Facebook">📘</a>
-        <a href="#" title="Instagram">📸</a>
-      </div>
-      <h3>Quick Links</h3>
-      <ul style="list-style: disc inside; margin-left:1rem;">
-        <li><a href="#features">Features</a></li>
-        <li><a href="#gallery">Gallery</a></li>
-        <li><a href="#contact">Contact</a></li>
+    <section id="tips">
+      <h3>Tips for Effective Prompts</h3>
+      <ul>
+        <li>Be concise but precise: mention exact selectors or element IDs.</li>
+        <li>Use hex codes or color names for clarity.</li>
+        <li>Break complex changes into numbered steps.</li>
+        <li>Ask for annotated code snippets so you understand each change.</li>
       </ul>
-    </aside>
+    </section>
 
   </div>
-
-  <!-- Footer -->
-  <footer>
-    <p>&copy; 2023 Your Name. All rights reserved.</p>
-  </footer>
 
 </body>
 </html>
