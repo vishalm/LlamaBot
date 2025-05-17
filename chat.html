@@ -124,25 +124,36 @@
                 const messageHistory = document.querySelector('.message-history');
                 const newMessage = document.createElement('div');
                 newMessage.className = 'message';
-                newMessage.textContent = messageText;
+                newMessage.textContent = `You: ${messageText}`;
                 messageHistory.appendChild(newMessage);
 
                 try {
-                    // Make GET request to FastAPI endpoint
-                    const response = await fetch('http://localhost:8000/');
+                    // Make POST request to the new chat-message endpoint
+                    const response = await fetch('http://localhost:8000/chat-message', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ message: messageText })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
                     const data = await response.json();
                     
                     // Create and display server response
                     const serverResponse = document.createElement('div');
                     serverResponse.className = 'message';
-                    serverResponse.textContent = `Server response: ${data.message}`;
+                    serverResponse.textContent = `AI: ${data.message}`;
                     messageHistory.appendChild(serverResponse);
                 } catch (error) {
                     // Handle any errors
                     const errorMessage = document.createElement('div');
                     errorMessage.className = 'message';
                     errorMessage.style.color = '#ff6b6b';
-                    errorMessage.textContent = 'Error: Could not connect to server';
+                    errorMessage.textContent = `Error: ${error.message}`;
                     messageHistory.appendChild(errorMessage);
                 }
                 
