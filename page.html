@@ -1,181 +1,55 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Tic-Tac-Toe vs Computer</title>
-    <style>
-      body {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        font-family: sans-serif;
-        margin-top: 50px;
-      }
-      #board {
-        display: grid;
-        grid-template-columns: repeat(3, 100px);
-        grid-template-rows: repeat(3, 100px);
-        gap: 5px;
-      }
-      .cell {
-        width: 100px;
-        height: 100px;
-        background: #f0f0f0;
-        font-size: 64px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        user-select: none;
-      }
-      .cell:hover {
-        background: #e0e0e0;
-      }
-      #message {
-        margin-top: 20px;
-        font-size: 1.2em;
-      }
-      #reset {
-        margin-top: 10px;
-        padding: 5px 10px;
-        font-size: 1em;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="board"></div>
-    <div id="message"></div>
-    <button id="reset">Restart</button>
-    <script>
-      const human = "X";
-      const ai = "O";
-      let board; // Array of 9 elements: 'X', 'O', or ''
-      
-      const winCombos = [
-        [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
-        [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
-        [0, 4, 8], [2, 4, 6] // diagonals
-      ];
-      
-      const boardEl = document.getElementById('board');
-      const messageEl = document.getElementById('message');
-      const resetBtn = document.getElementById('reset');
-
-      // Initialize the UI grid and state
-      function init() {
-        board = Array(9).fill('');
-        boardEl.innerHTML = '';
-        messageEl.textContent = "Your turn (X)";
-        
-        // create 9 cells
-        for (let i = 0; i < 9; i++) {
-          const cell = document.createElement('div');
-          cell.classList.add('cell');
-          cell.dataset.index = i;
-          cell.addEventListener('click', onCellClick);
-          boardEl.appendChild(cell);
-        }
-      }
-
-      // Handler when user clicks a cell
-      function onCellClick(e) {
-        const idx = +e.target.dataset.index;
-        if (board[idx] !== '' || isGameOver()) return; // occupied or over
-        
-        makeMove(idx, human);
-        if (!isGameOver()) {
-          const best = minimax(board, ai).index;
-          makeMove(best, ai);
-        }
-      }
-
-      // Place a mark, update UI, check for end
-      function makeMove(idx, player) {
-        board[idx] = player;
-        boardEl.children[idx].textContent = player;
-        
-        const gameWon = checkWin(board, player);
-        if (gameWon) {
-          endGame(player === human ? "You win!" : "Computer wins!");
-        } else if (emptyIndices(board).length === 0) {
-          endGame("It's a tie!");
-        } else {
-          messageEl.textContent = player === human ? "Computer's turn..." : "Your turn (X)";
-        }
-      }
-
-      // Check if a player has won
-      function checkWin(b, player) {
-        return winCombos.some(combo => combo.every(i => b[i] === player));
-      }
-
-      function isGameOver() {
-        return /win|tie/.test(messageEl.textContent);
-      }
-
-      function endGame(msg) {
-        messageEl.textContent = msg;
-      }
-
-      // Return array of empty spot indexes
-      function emptyIndices(b) {
-        return b.map((v, i) => v === '' ? i : null).filter(i => i !== null);
-      }
-
-      // Minimax algorithm
-      function minimax(newBoard, player) {
-        const avail = emptyIndices(newBoard);
-
-        // terminal states
-        if (checkWin(newBoard, human)) {
-          return { score: -10 };
-        } else if (checkWin(newBoard, ai)) {
-          return { score: +10 };
-        } else if (avail.length === 0) {
-          return { score: 0 };
-        }
-
-        const moves = [];
-        
-        for (let i = 0; i < avail.length; i++) {
-          const idx = avail[i];
-          
-          // save state, make move
-          newBoard[idx] = player;
-          const result = minimax(newBoard, player === ai ? human : ai);
-          
-          // restore state
-          newBoard[idx] = '';
-          moves.push({ index: idx, score: result.score });
-        }
-
-        // choose best move
-        let bestMove;
-        if (player === ai) {
-          // maximize
-          let bestScore = -Infinity;
-          moves.forEach(m => {
-            if (m.score > bestScore) {
-              bestScore = m.score;
-              bestMove = m;
-            }
-          });
-        } else {
-          // minimize
-          let bestScore = +Infinity;
-          moves.forEach(m => {
-            if (m.score < bestScore) {
-              bestScore = m.score;
-              bestMove = m;
-            }
-          });
-        }
-        return bestMove;
-      }
-
-      // Reset button
-      resetBtn.addEventListener('click', init);
-      init();
-    </script>
-  </body>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Snake</title>
+<style>
+  body{margin:0;display:flex;justify-content:center;align-items:center;height:100vh;background:#000}
+</style>
+</head>
+<body>
+<canvas id="game" width="400" height="400"></canvas>
+<script>
+const canvas=document.getElementById('game')
+const ctx=canvas.getContext('2d')
+const rows=20,cols=20,size=20
+let snake,food,dx,dy,hueOffset,loop
+function init(){
+  snake=[{x:10,y:10}]
+  dx=1;dy=0
+  hueOffset=0
+  placeFood()
+}
+function placeFood(){
+  food={x:Math.floor(Math.random()*cols),y:Math.floor(Math.random()*rows)}
+}
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowUp'&&dy===0){dx=0;dy=-1}
+  if(e.key==='ArrowDown'&&dy===0){dx=0;dy=1}
+  if(e.key==='ArrowLeft'&&dx===0){dx=-1;dy=0}
+  if(e.key==='ArrowRight'&&dx===0){dx=1;dy=0}
+})
+function game(){
+  const head={x:snake[0].x+dx,y:snake[0].y+dy}
+  if(head.x<0||head.x>=cols||head.y<0||head.y>=rows||snake.some(s=>s.x===head.x&&s.y===head.y)){
+    init()
+    return
+  }
+  snake.unshift(head)
+  if(head.x===food.x&&head.y===food.y) placeFood()
+  else snake.pop()
+  ctx.fillStyle='#000'
+  ctx.fillRect(0,0,canvas.width,canvas.height)
+  hueOffset=(hueOffset+5)%360
+  snake.forEach((s,i)=>{
+    ctx.fillStyle=`hsl(${(hueOffset+i*20)%360},100%,50%)`
+    ctx.fillRect(s.x*size,s.y*size,size,size)
+  })
+  ctx.fillStyle='#fff'
+  ctx.fillRect(food.x*size,food.y*size,size,size)
+}
+init()
+loop=setInterval(game,100)
+</script>
+</body>
 </html>
