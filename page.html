@@ -1,31 +1,155 @@
-I can help with a wide range of tasks, including but not limited to:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Platform Scroller Game</title>
+  <style>
+    * { margin: 0; padding: 0; }
+    body { background: #222; overflow: hidden; }
+    canvas { display: block; background: #333; margin: 0 auto; }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
 
-1. Web Development  
-   • Writing or improving HTML, CSS, and JavaScript  
-   • Explaining web design concepts and best practices  
-   • Building responsive layouts and UI components  
-   • Integrating frameworks and libraries (React, Vue, etc.)  
+    const gravity = 0.5;
+    const scrollSpeed = 2;
+    const keys = { left: false, right: false, up: false };
 
-2. Content Creation & Editing  
-   • Drafting, proofreading, and polishing text (articles, blog posts, documentation)  
-   • Summarizing or expanding existing content  
-   • Translating between languages  
+    const player = {
+      x: 100,
+      y: height - 150,
+      width: 40,
+      height: 60,
+      xVel: 0,
+      yVel: 0,
+      onGround: false
+    };
 
-3. Technical Assistance  
-   • Explaining algorithms, data structures, and programming concepts  
-   • Debugging code snippets and troubleshooting errors  
-   • Guiding you through development workflows (Git, deployment, testing)  
+    let platforms = [];
+    let spawnTimer = 0;
+    const spawnInterval = 90; // frames
 
-4. Creative Tasks  
-   • Brainstorming ideas (stories, marketing campaigns, user experiences)  
-   • Writing poems, dialogs, and character backstories  
+    function spawnPlatform() {
+      const pw = 50 + Math.random() * 100;
+      const py = height - (50 + Math.random() * 200);
+      platforms.push({ x: width, y: py, width: pw, height: 20 });
+    }
 
-5. Data & Analysis  
-   • Simple data transformations and calculations  
-   • Helping you structure data for reports or visualizations  
+    // initial ground platform
+    platforms.push({ x: 0, y: height - 30, width: width, height: 30 });
 
-6. General Knowledge & Research  
-   • Providing definitions, explanations, and summaries on a variety of topics  
-   • Guiding further reading or study resources  
+    function update() {
+      // move player left/right
+      if (keys.left) player.xVel -= 0.5;
+      if (keys.right) player.xVel += 0.5;
 
-If you have a specific project or question in mind—whether it’s modifying a web page, generating code snippets, or just understanding a concept—just let me know, and I’ll walk you through it step by step.
+      // apply gravity
+      player.yVel += gravity;
+
+      // apply velocities
+      player.x += player.xVel;
+      player.y += player.yVel;
+
+      // friction
+      player.xVel *= 0.8;
+
+      // prevent going off screen horizontally
+      if (player.x < 0) {
+        player.x = 0;
+        player.xVel = 0;
+      }
+      if (player.x + player.width > width) {
+        player.x = width - player.width;
+        player.xVel = 0;
+      }
+
+      // reset ground flag
+      player.onGround = false;
+
+      // platform collision
+      for (let plat of platforms) {
+        // move platforms left
+        plat.x -= scrollSpeed;
+
+        // collision detection
+        if (
+          player.x + player.width > plat.x &&
+          player.x < plat.x + plat.width &&
+          player.y + player.height <= plat.y + 1 &&
+          player.y + player.height + player.yVel >= plat.y
+        ) {
+          player.y = plat.y - player.height;
+          player.yVel = 0;
+          player.onGround = true;
+        }
+      }
+
+      // jump
+      if (keys.up && player.onGround) {
+        player.yVel = -12;
+        player.onGround = false;
+      }
+
+      // remove off-screen platforms
+      platforms = platforms.filter(p => p.x + p.width > 0);
+
+      // spawn new platforms
+      spawnTimer++;
+      if (spawnTimer >= spawnInterval) {
+        spawnPlatform();
+        spawnTimer = 0;
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, width, height);
+
+      // draw player
+      ctx.fillStyle = '#ff4136';
+      ctx.fillRect(player.x, player.y, player.width, player.height);
+
+      // draw platforms
+      ctx.fillStyle = '#0074d9';
+      for (let plat of platforms) {
+        ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
+      }
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    window.addEventListener('keydown', e => {
+      if (e.code === 'ArrowLeft') keys.left = true;
+      if (e.code === 'ArrowRight') keys.right = true;
+      if (e.code === 'ArrowUp') keys.up = true;
+    });
+    window.addEventListener('keyup', e => {
+      if (e.code === 'ArrowLeft') keys.left = false;
+      if (e.code === 'ArrowRight') keys.right = false;
+      if (e.code === 'ArrowUp') keys.up = false;
+    });
+
+    window.addEventListener('resize', () => {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+    });
+
+    // start game
+    loop();
+  </script>
+</body>
+</html>

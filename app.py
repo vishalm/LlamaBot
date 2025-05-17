@@ -60,31 +60,67 @@ async def chat_message(chat_message: ChatMessage):
         except FileNotFoundError:
             existing_html_content = ""
 
-        prompt = client.pull_prompt("llamabot/simple_generate_html_prompt_llamabot")
-        prompt_value = prompt.invoke({"user_message": chat_message.message, "existing_html_content": existing_html_content})
+        ## New step: Figure out the user's intent, and then based on their response, call the appropriate function.
+        prompt = client.pull_prompt("llamabot/determine_user_intent")
+        prompt_value = prompt.invoke({"user_message": chat_message.message})
+        logger.info(f"[{request_id}] Intent prompt value: {prompt_value}")
+        
+        # Get intent from LLM
+        intent_response = llm.invoke(prompt_value)
+        user_intent = intent_response.content
+        logger.info(f"[{request_id}] Determined user intent: {user_intent}")
 
-        logger.info(f"Prompt we're sending to the LLM: {prompt_value}")
-        
-        ai_response = llm.invoke(prompt_value)
+        if user_intent == "RESPOND_NATURALLY":
+            prompt = client.pull_prompt("llamabot/simple_generate_html_prompt_llamabot")
+            prompt_value = prompt.invoke({"user_message": chat_message.message, "existing_html_content": existing_html_content})
+            logger.info(f"[{request_id}] Natural response prompt: {prompt_value}")
+            
+            ai_response = llm.invoke(prompt_value)
+            processing_time = time.time() - start_time
+            
+            logger.info(f"[{request_id}] AI response received in {processing_time:.2f} seconds")
+            logger.info(f"[{request_id}] Full AI response: {ai_response.content}")
 
-        processing_time = time.time() - start_time
-        logger.info(f"[{request_id}] AI response received in {processing_time:.2f} seconds")
-        logger.info(f"[{request_id}] Full AI response: {ai_response.content}")
+            return JSONResponse(content={
+                "message": ai_response.content,
+                "request_id": request_id,
+                "processing_time": processing_time
+            })
+
+        elif user_intent == "WRITE_CODE":
+            prompt = client.pull_prompt("llamabot/simple_generate_html_prompt_llamabot")
+            prompt_value = prompt.invoke({"user_message": chat_message.message, "existing_html_content": existing_html_content})
+            logger.info(f"[{request_id}] Code writing prompt: {prompt_value}")
+            
+            ai_response = llm.invoke(prompt_value)
+            processing_time = time.time() - start_time
+            
+            logger.info(f"[{request_id}] AI response received in {processing_time:.2f} seconds")
+            logger.info(f"[{request_id}] Full AI response: {ai_response.content}")
+            
+            # Write AI response to page.html
+            try:
+                with open("page.html", "w") as f:
+                    f.write(ai_response.content)
+                logger.info(f"[{request_id}] Successfully wrote AI response to page.html")
+            except Exception as write_error:
+                logger.error(f"[{request_id}] Error writing to page.html: {str(write_error)}", exc_info=True)
+                raise write_error
         
-        # Write AI response to page.html
-        try:
-            with open("page.html", "w") as f:
-                f.write(ai_response.content)
-            logger.info(f"[{request_id}] Successfully wrote AI response to page.html")
-        except Exception as write_error:
-            logger.error(f"[{request_id}] Error writing to page.html: {str(write_error)}", exc_info=True)
-            raise write_error
-        
-        return JSONResponse(content={
-            "message": ai_response.content,
-            "request_id": request_id,
-            "processing_time": processing_time
-        })
+            return JSONResponse(content={
+                "message": ai_response.content,
+                "request_id": request_id,
+                "processing_time": processing_time
+            })
+        else:
+            logger.warning(f"[{request_id}] Unexpected user intent: {user_intent}")
+            return JSONResponse(
+                content={
+                    "message": "I'm not sure how to handle that request. Could you please rephrase it?",
+                    "request_id": request_id
+                },
+                status_code=400
+            )
         
     except Exception as e:
         logger.error(f"[{request_id}] Error processing message: {str(e)}", exc_info=True)
