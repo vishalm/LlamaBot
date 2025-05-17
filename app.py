@@ -11,6 +11,8 @@ import logging
 import time
 from datetime import datetime
 
+from langsmith import Client
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -32,6 +34,8 @@ llm = ChatOpenAI(
     model="o4-mini-2025-04-16"
 )
 
+client = Client(api_key=os.getenv("LANGSMITH_API_KEY"))
+
 # Pydantic model for chat request
 class ChatMessage(BaseModel):
     message: str
@@ -48,8 +52,21 @@ async def chat_message(chat_message: ChatMessage):
     try:
         start_time = time.time()
         logger.info(f"[{request_id}] Sending request to AI model")
+
+        # Get the existing HTML content from page.html
+        try:
+            with open("page.html", "r") as f:
+                existing_html_content = f.read()
+        except FileNotFoundError:
+            existing_html_content = ""
+
+        prompt = client.pull_prompt("llamabot/simple_generate_html_prompt_llamabot")
+        prompt_value = prompt.invoke({"user_message": chat_message.message, "existing_html_content": existing_html_content})
+
+        logger.info(f"Prompt we're sending to the LLM: {prompt_value}")
         
-        ai_response = llm.invoke([HumanMessage(content=chat_message.message)])
+        ai_response = llm.invoke(prompt_value)
+
         processing_time = time.time() - start_time
         logger.info(f"[{request_id}] AI response received in {processing_time:.2f} seconds")
         logger.info(f"[{request_id}] Full AI response: {ai_response.content}")
