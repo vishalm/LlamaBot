@@ -71,7 +71,7 @@ async def chat_message(chat_message: ChatMessage):
         logger.info(f"[{request_id}] Determined user intent: {user_intent}")
 
         if user_intent == "RESPOND_NATURALLY":
-            prompt = client.pull_prompt("llamabot/simple_generate_html_prompt_llamabot")
+            prompt = client.pull_prompt("llamabot/respond_to_user")
             prompt_value = prompt.invoke({"user_message": chat_message.message, "existing_html_content": existing_html_content})
             logger.info(f"[{request_id}] Natural response prompt: {prompt_value}")
             
