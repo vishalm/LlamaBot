@@ -1,19 +1,19 @@
 # LlamaBot
 
-LlamaBot is an AI Agent developed to help users create software projects by writing and modifying HTML, CSS, and JavaScript code. It's built using Python, FastAPI, and LangGraph/LangChain.
+LlamaBot is an AI Agent developed to help users create software projects by writing and modifying HTML, CSS, and JavaScript code. It's built using LangGraph.
 
 ![LlamaBot Logo](https://service-jobs-images.s3.us-east-2.amazonaws.com/7rl98t1weu387r43il97h6ipk1l7)
 
 ## Project Overview
 
-LlamaBot is an open-source AI agent that can assist with:
+LlamaBot is an open-source AI agent that writes code primarily for:
 - Creating basic games using HTML and JavaScript Canvas
 - Building portfolio websites and static web pages
 - Developing landing pages for businesses
 - Creating dynamic calculators or quote tools for small businesses
-- And much more!
+- Soon, much more!
 
-This project was created for educational purposes as a learning tool similar to other code-generating AI tools like Lovable, Replit, Bolt, Claude Artifacts, and OpenAI's Canvas.
+This project was created for educational purposes as a learning tool to explore & document how other code-generating AI tools like Lovable, Replit, Bolt, Claude Artifacts, and OpenAI's Canvas work under the hood.
 
 ## Features
 
