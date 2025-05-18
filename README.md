@@ -13,7 +13,7 @@ LlamaBot is an open-source AI agent that writes code primarily for:
 - Creating dynamic calculators or quote tools for small businesses
 - Soon, much more!
 
-This project was created for educational purposes as a learning tool to explore & document how other code-generating AI tools like Lovable, Replit, Bolt, Claude Artifacts, and OpenAI's Canvas work under the hood.
+This project was created to document our startup's journey using LangGraph, and to create a learning tool to explore & document how other code-generating AI tools like Lovable, Replit, Bolt, Claude Artifacts, and OpenAI's Canvas work under the hood.
 
 ## Features
 
@@ -54,7 +54,11 @@ pip install -r requirements.txt
 
 5. Create a `.env` file in the root directory with your API keys:
 ```
+OPENAI_API_KEY=your_openai_key
 LANGSMITH_API_KEY=your_langsmith_api_key
+LANGSMITH_TRACING=true
+LANGSMITH_ENDPOINT="https://api.smith.langchain.com"
+LANGSMITH_PROJECT="llamabot-open-source"
 ```
 
 ## Running the Application
@@ -81,7 +85,6 @@ http://localhost:8000/chat
 - `app.py`: The main FastAPI application
 - `chat.html`: The chat interface
 - `page.html`: The generated code/preview page
-- `prompts/`: LangChain prompt templates (hosted on LangChain Hub)
 
 ## Example Use Cases
 
