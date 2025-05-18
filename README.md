@@ -1,6 +1,6 @@
 # LlamaBot
 
-LlamaBot is an AI Agent developed to help users create software projects by writing and modifying HTML, CSS, and JavaScript code. It's built using LangGraph.
+LlamaBot is a web development coding Agent developed to help users create web software projects by writing and modifying HTML, CSS, and JavaScript code. It's built using LangGraph.
 
 ![LlamaBot Logo](https://service-jobs-images.s3.us-east-2.amazonaws.com/7rl98t1weu387r43il97h6ipk1l7)
 
