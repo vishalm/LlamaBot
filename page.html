@@ -24,6 +24,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      text-align: center;
       font: 24px sans-serif;
       color: #fff;
       background: rgba(0,0,0,0.8);
@@ -34,18 +35,22 @@
 </head>
 <body>
   <div id="score">Score: 0</div>
-  <div id="overlay">Click to Play</div>
+  <div id="overlay">
+    Click to Play<br>
+    Hold ↑ to move
+  </div>
   <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
   <script>
     // === Configuration constants ===
-    const planeSize = 400;            // doubled play area
+    const planeSize = 400;            // play area size
     const snakeSpeed = 0.2;
-    const turnSpeed = Math.PI / 120;  // slower turn → wider radius
+    const turnSpeed = Math.PI / 120;  // turning speed
 
     let scene, camera, renderer;
     let snake = [], positions = [];
     let headMesh, food, score = 0;
     let direction = new THREE.Vector3(0, 0, -1);
+    let moveForward = false; // only move when ArrowUp is held
 
     init();
     animate();
@@ -65,7 +70,7 @@
         75,
         window.innerWidth / window.innerHeight,
         0.1,
-        planeSize * 2    // extended far clipping
+        planeSize * 2
       );
       camera.position.set(0, 2, 0);
       camera.rotation.x = -0.2;
@@ -76,7 +81,7 @@
       dlight.position.set(5, 10, 7.5);
       scene.add(dlight);
 
-      // head mesh (semi-transparent cube in front)
+      // head mesh (semi-transparent cube)
       const headGeo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
       const headMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
       headMesh = new THREE.Mesh(headGeo, headMat);
@@ -93,7 +98,7 @@
         snake.push(seg);
         positions.push(seg.position.clone());
       }
-      // extra position so positions.length === snake.length + 1
+      // one extra history slot
       positions.push(camera.position.clone());
 
       // food
@@ -111,9 +116,10 @@
       document.body.appendChild(renderer.domElement);
       renderer.domElement.focus();
 
-      // events
+      // event listeners
       window.addEventListener('resize', onWindowResize);
       document.addEventListener('keydown', onKeyDown);
+      document.addEventListener('keyup', onKeyUp);
       document.getElementById('overlay').addEventListener('click', () => {
         document.getElementById('overlay').style.display = 'none';
         renderer.domElement.focus();
@@ -131,39 +137,47 @@
     }
 
     function onKeyDown(e) {
-      if (e.code === 'ArrowLeft') {
-        camera.rotation.y += turnSpeed;
-        direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), turnSpeed);
+      switch (e.code) {
+        case 'ArrowLeft':
+          camera.rotation.y += turnSpeed;
+          direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), turnSpeed);
+          break;
+        case 'ArrowRight':
+          camera.rotation.y -= turnSpeed;
+          direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), -turnSpeed);
+          break;
+        case 'ArrowUp':
+          moveForward = true;
+          break;
+        case 'ArrowDown':
+          // optional: could add backward movement
+          break;
       }
-      if (e.code === 'ArrowRight') {
-        camera.rotation.y -= turnSpeed;
-        direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), -turnSpeed);
-      }
+    }
+
+    function onKeyUp(e) {
       if (e.code === 'ArrowUp') {
-        camera.rotation.x = Math.max(camera.rotation.x - turnSpeed, -Math.PI / 2);
-      }
-      if (e.code === 'ArrowDown') {
-        camera.rotation.x = Math.min(camera.rotation.x + turnSpeed, Math.PI / 2);
+        moveForward = false;
       }
     }
 
     function animate() {
       requestAnimationFrame(animate);
 
-      // move forward
-      camera.position.addScaledVector(direction, snakeSpeed);
-
-      // update history positions
-      positions.unshift(camera.position.clone());
-      positions.pop();
+      // only advance when holding forward
+      if (moveForward) {
+        camera.position.addScaledVector(direction, snakeSpeed);
+        positions.unshift(camera.position.clone());
+        positions.pop();
+      }
 
       // update snake segments
       snake.forEach((seg, i) => {
-        const targetPos = positions[i + 1];
-        if (targetPos) seg.position.copy(targetPos);
+        const target = positions[i + 1];
+        if (target) seg.position.copy(target);
       });
 
-      // check for food collision (horizontal only)
+      // check for food collision (horizontal plane)
       const dx = camera.position.x - food.position.x;
       const dz = camera.position.z - food.position.z;
       if (Math.hypot(dx, dz) < 0.5) {
@@ -187,11 +201,7 @@
       const segMat = new THREE.MeshStandardMaterial({ color: 0x2ecc71 });
       const seg = new THREE.Mesh(segGeo, segMat);
       const lastPos = positions[positions.length - 1];
-      if (lastPos) {
-        seg.position.copy(lastPos);
-      } else {
-        seg.position.set(camera.position.x, camera.position.y, camera.position.z);
-      }
+      seg.position.copy(lastPos || camera.position);
       scene.add(seg);
       snake.push(seg);
       positions.push(seg.position.clone());

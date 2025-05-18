@@ -88,17 +88,28 @@ async def chat_message(chat_message: ChatMessage):
             })
 
         elif user_intent == "WRITE_CODE":
-            prompt = client.pull_prompt("llamabot/simple_generate_html_prompt_llamabot")
+            prompt = client.pull_prompt("llamabot/design_planning_prompt")
             prompt_value = prompt.invoke({"user_message": chat_message.message, "existing_html_content": existing_html_content})
+            logger.info(f"[{request_id}] Code writing prompt: {prompt_value}")
+            
+            ai_response_plan_and_design = llm.invoke(prompt_value)
+            processing_time = time.time() - start_time
+            
+            logger.info(f"[{request_id}] AI Plan and Design response received in {processing_time:.2f} seconds")
+            logger.info(f"[{request_id}] Full AI Plan and Design response: {ai_response_plan_and_design.content}")
+
+            prompt = client.pull_prompt("llamabot/after_planning_generate_html")
+            prompt_value = prompt.invoke({"user_message": chat_message.message, "existing_html_content": existing_html_content, "design_plan": ai_response_plan_and_design.content})
             logger.info(f"[{request_id}] Code writing prompt: {prompt_value}")
             
             ai_response = llm.invoke(prompt_value)
             processing_time = time.time() - start_time
             
-            logger.info(f"[{request_id}] AI response received in {processing_time:.2f} seconds")
-            logger.info(f"[{request_id}] Full AI response: {ai_response.content}")
+            logger.info(f"[{request_id}] AI Write Code response received in {processing_time:.2f} seconds")
+            logger.info(f"[{request_id}] Full AI Write Code response: {ai_response.content}")
             
             # Write AI response to page.html
+            
             try:
                 with open("page.html", "w") as f:
                     f.write(ai_response.content)
@@ -110,7 +121,8 @@ async def chat_message(chat_message: ChatMessage):
             return JSONResponse(content={
                 "message": ai_response.content,
                 "request_id": request_id,
-                "processing_time": processing_time
+                "processing_time": processing_time,
+                "decision": "WRITE_CODE"
             })
         else:
             logger.warning(f"[{request_id}] Unexpected user intent: {user_intent}")
