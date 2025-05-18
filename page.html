@@ -3,153 +3,205 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Platform Scroller Game</title>
+  <title>3D First-Person Snake Game</title>
   <style>
     * { margin: 0; padding: 0; }
-    body { background: #fff; overflow: hidden; }
-    canvas { display: block; background: #fff; margin: 0 auto; }
+    body { overflow: hidden; background: #333; }
+    #score {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: #fff;
+      font: 20px sans-serif;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 5px 10px;
+      border-radius: 4px;
+      z-index: 10;
+    }
+    #overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font: 24px sans-serif;
+      color: #fff;
+      background: rgba(0,0,0,0.8);
+      cursor: pointer;
+      z-index: 20;
+    }
   </style>
 </head>
 <body>
-  <canvas id="gameCanvas"></canvas>
+  <div id="score">Score: 0</div>
+  <div id="overlay">Click to Play</div>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
   <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    let width = window.innerWidth;
-    let height = window.innerHeight;
-    canvas.width = width;
-    canvas.height = height;
+    // === Configuration constants ===
+    const planeSize = 400;            // doubled play area
+    const snakeSpeed = 0.2;
+    const turnSpeed = Math.PI / 120;  // slower turn → wider radius
 
-    const gravity = 0.5;
-    const scrollSpeed = 2;
-    const keys = { left: false, right: false, up: false };
+    let scene, camera, renderer;
+    let snake = [], positions = [];
+    let headMesh, food, score = 0;
+    let direction = new THREE.Vector3(0, 0, -1);
 
-    const player = {
-      x: 100,
-      y: height - 150,
-      width: 40,
-      height: 60,
-      xVel: 0,
-      yVel: 0,
-      onGround: false
-    };
+    init();
+    animate();
 
-    let platforms = [];
-    let spawnTimer = 0;
-    const spawnInterval = 90; // frames
+    function init() {
+      scene = new THREE.Scene();
 
-    function spawnPlatform() {
-      const pw = 50 + Math.random() * 100;
-      const py = height - (50 + Math.random() * 200);
-      platforms.push({ x: width, y: py, width: pw, height: 20 });
+      // grid floor
+      const grid = new THREE.GridHelper(planeSize, planeSize, 0x888888, 0x444444);
+      scene.add(grid);
+
+      // axes helper
+      scene.add(new THREE.AxesHelper(5));
+
+      // camera
+      camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        planeSize * 2    // extended far clipping
+      );
+      camera.position.set(0, 2, 0);
+      camera.rotation.x = -0.2;
+
+      // lights
+      scene.add(new THREE.AmbientLight(0x808080));
+      const dlight = new THREE.DirectionalLight(0xffffff, 1);
+      dlight.position.set(5, 10, 7.5);
+      scene.add(dlight);
+
+      // head mesh (semi-transparent cube in front)
+      const headGeo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+      const headMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
+      headMesh = new THREE.Mesh(headGeo, headMat);
+      headMesh.position.set(0, 0, -0.5);
+      camera.add(headMesh);
+
+      // initial snake body segments
+      const segGeo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+      const segMat = new THREE.MeshStandardMaterial({ color: 0x2ecc71 });
+      for (let i = 0; i < 5; i++) {
+        const seg = new THREE.Mesh(segGeo, segMat);
+        seg.position.set(0, 0.25, i * 0.6);
+        scene.add(seg);
+        snake.push(seg);
+        positions.push(seg.position.clone());
+      }
+      // extra position so positions.length === snake.length + 1
+      positions.push(camera.position.clone());
+
+      // food
+      const fGeo = new THREE.SphereGeometry(0.3, 16, 16);
+      const fMat = new THREE.MeshStandardMaterial({ color: 0xe74c3c });
+      food = new THREE.Mesh(fGeo, fMat);
+      placeFood();
+      scene.add(food);
+
+      // renderer
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.domElement.setAttribute('tabindex', '0');
+      renderer.domElement.style.outline = 'none';
+      document.body.appendChild(renderer.domElement);
+      renderer.domElement.focus();
+
+      // events
+      window.addEventListener('resize', onWindowResize);
+      document.addEventListener('keydown', onKeyDown);
+      document.getElementById('overlay').addEventListener('click', () => {
+        document.getElementById('overlay').style.display = 'none';
+        renderer.domElement.focus();
+      });
     }
 
-    // initial ground platform
-    platforms.push({ x: 0, y: height - 30, width: width, height: 30 });
+    function placeFood() {
+      const range = planeSize / 2;
+      const y = camera.position.y;
+      food.position.set(
+        (Math.random() - 0.5) * range,
+        y,
+        (Math.random() - 0.5) * range
+      );
+    }
 
-    function update() {
-      // move player left/right
-      if (keys.left) player.xVel -= 0.5;
-      if (keys.right) player.xVel += 0.5;
-
-      // apply gravity
-      player.yVel += gravity;
-
-      // apply velocities
-      player.x += player.xVel;
-      player.y += player.yVel;
-
-      // friction
-      player.xVel *= 0.8;
-
-      // prevent going off screen horizontally
-      if (player.x < 0) {
-        player.x = 0;
-        player.xVel = 0;
+    function onKeyDown(e) {
+      if (e.code === 'ArrowLeft') {
+        camera.rotation.y += turnSpeed;
+        direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), turnSpeed);
       }
-      if (player.x + player.width > width) {
-        player.x = width - player.width;
-        player.xVel = 0;
+      if (e.code === 'ArrowRight') {
+        camera.rotation.y -= turnSpeed;
+        direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), -turnSpeed);
       }
-
-      // reset ground flag
-      player.onGround = false;
-
-      // platform collision
-      for (let plat of platforms) {
-        // move platforms left
-        plat.x -= scrollSpeed;
-
-        // collision detection
-        if (
-          player.x + player.width > plat.x &&
-          player.x < plat.x + plat.width &&
-          player.y + player.height <= plat.y + 1 &&
-          player.y + player.height + player.yVel >= plat.y
-        ) {
-          player.y = plat.y - player.height;
-          player.yVel = 0;
-          player.onGround = true;
-        }
+      if (e.code === 'ArrowUp') {
+        camera.rotation.x = Math.max(camera.rotation.x - turnSpeed, -Math.PI / 2);
       }
-
-      // jump
-      if (keys.up && player.onGround) {
-        player.yVel = -12;
-        player.onGround = false;
-      }
-
-      // remove off-screen platforms
-      platforms = platforms.filter(p => p.x + p.width > 0);
-
-      // spawn new platforms
-      spawnTimer++;
-      if (spawnTimer >= spawnInterval) {
-        spawnPlatform();
-        spawnTimer = 0;
+      if (e.code === 'ArrowDown') {
+        camera.rotation.x = Math.min(camera.rotation.x + turnSpeed, Math.PI / 2);
       }
     }
 
-    function draw() {
-      ctx.clearRect(0, 0, width, height);
+    function animate() {
+      requestAnimationFrame(animate);
 
-      // draw player
-      ctx.fillStyle = '#ff4136';
-      ctx.fillRect(player.x, player.y, player.width, player.height);
+      // move forward
+      camera.position.addScaledVector(direction, snakeSpeed);
 
-      // draw platforms
-      ctx.fillStyle = '#0074d9';
-      for (let plat of platforms) {
-        ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
+      // update history positions
+      positions.unshift(camera.position.clone());
+      positions.pop();
+
+      // update snake segments
+      snake.forEach((seg, i) => {
+        const targetPos = positions[i + 1];
+        if (targetPos) seg.position.copy(targetPos);
+      });
+
+      // check for food collision (horizontal only)
+      const dx = camera.position.x - food.position.x;
+      const dz = camera.position.z - food.position.z;
+      if (Math.hypot(dx, dz) < 0.5) {
+        score++;
+        document.getElementById('score').innerText = 'Score: ' + score;
+        flashHead();
+        growSnake();
+        placeFood();
       }
+
+      renderer.render(scene, camera);
     }
 
-    function loop() {
-      update();
-      draw();
-      requestAnimationFrame(loop);
+    function flashHead() {
+      headMesh.material.color.set(0xffff00);
+      setTimeout(() => headMesh.material.color.set(0xffffff), 100);
     }
 
-    window.addEventListener('keydown', e => {
-      if (e.code === 'ArrowLeft') keys.left = true;
-      if (e.code === 'ArrowRight') keys.right = true;
-      if (e.code === 'ArrowUp') keys.up = true;
-    });
-    window.addEventListener('keyup', e => {
-      if (e.code === 'ArrowLeft') keys.left = false;
-      if (e.code === 'ArrowRight') keys.right = false;
-      if (e.code === 'ArrowUp') keys.up = false;
-    });
+    function growSnake() {
+      const segGeo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+      const segMat = new THREE.MeshStandardMaterial({ color: 0x2ecc71 });
+      const seg = new THREE.Mesh(segGeo, segMat);
+      const lastPos = positions[positions.length - 1];
+      if (lastPos) {
+        seg.position.copy(lastPos);
+      } else {
+        seg.position.set(camera.position.x, camera.position.y, camera.position.z);
+      }
+      scene.add(seg);
+      snake.push(seg);
+      positions.push(seg.position.clone());
+    }
 
-    window.addEventListener('resize', () => {
-      width = window.innerWidth;
-      height = window.innerHeight;
-      canvas.width = width;
-      canvas.height = height;
-    });
-
-    // start game
-    loop();
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
   </script>
 </body>
 </html>
