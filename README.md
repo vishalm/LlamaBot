@@ -1,19 +1,19 @@
 # LlamaBot
 
-LlamaBot is an AI Agent developed to help users create software projects by writing and modifying HTML, CSS, and JavaScript code. It's built using Python, FastAPI, and LangGraph/LangChain.
+LlamaBot is a web development coding Agent developed to help users create web software projects by writing and modifying HTML, CSS, and JavaScript code. It's built using LangGraph.
 
 ![LlamaBot Logo](https://service-jobs-images.s3.us-east-2.amazonaws.com/7rl98t1weu387r43il97h6ipk1l7)
 
 ## Project Overview
 
-LlamaBot is an open-source AI agent that can assist with:
+LlamaBot is an open-source AI agent that writes code primarily for:
 - Creating basic games using HTML and JavaScript Canvas
 - Building portfolio websites and static web pages
 - Developing landing pages for businesses
 - Creating dynamic calculators or quote tools for small businesses
-- And much more!
+- Soon, much more!
 
-This project was created for educational purposes as a learning tool similar to other code-generating AI tools like Lovable, Replit, Bolt, Claude Artifacts, and OpenAI's Canvas.
+This project was created to document our startup's journey using LangGraph, and to create a learning tool to explore & document how other code-generating AI tools like Lovable, Replit, Bolt, Claude Artifacts, and OpenAI's Canvas work under the hood.
 
 ## Features
 
@@ -54,7 +54,11 @@ pip install -r requirements.txt
 
 5. Create a `.env` file in the root directory with your API keys:
 ```
+OPENAI_API_KEY=your_openai_key
 LANGSMITH_API_KEY=your_langsmith_api_key
+LANGSMITH_TRACING=true
+LANGSMITH_ENDPOINT="https://api.smith.langchain.com"
+LANGSMITH_PROJECT="llamabot-open-source"
 ```
 
 ## Running the Application
@@ -81,7 +85,6 @@ http://localhost:8000/chat
 - `app.py`: The main FastAPI application
 - `chat.html`: The chat interface
 - `page.html`: The generated code/preview page
-- `prompts/`: LangChain prompt templates (hosted on LangChain Hub)
 
 ## Example Use Cases
 
