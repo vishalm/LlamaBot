@@ -10,6 +10,7 @@ import os
 import logging
 import time
 from datetime import datetime
+from agents.nodes import build_workflow
 
 from langsmith import Client
 
@@ -61,78 +62,27 @@ async def chat_message(chat_message: ChatMessage):
             existing_html_content = ""
 
         ## New step: Figure out the user's intent, and then based on their response, call the appropriate function.
-        prompt = client.pull_prompt("llamabot/determine_user_intent")
-        prompt_value = prompt.invoke({"user_message": chat_message.message})
-        logger.info(f"[{request_id}] Intent prompt value: {prompt_value}")
-        
-        # Get intent from LLM
-        intent_response = llm.invoke(prompt_value)
-        user_intent = intent_response.content
-        logger.info(f"[{request_id}] Determined user intent: {user_intent}")
+        # Write AI response to page.html
+        graph = build_workflow()
+        output = graph.invoke({
+            "messages": [HumanMessage(content=chat_message.message)],
+            "initial_user_message": chat_message.message,
+            "existing_html_content": existing_html_content
+        })
 
-        if user_intent == "RESPOND_NATURALLY":
-            prompt = client.pull_prompt("llamabot/respond_to_user")
-            prompt_value = prompt.invoke({"user_message": chat_message.message, "existing_html_content": existing_html_content})
-            logger.info(f"[{request_id}] Natural response prompt: {prompt_value}")
-            
-            ai_response = llm.invoke(prompt_value)
-            processing_time = time.time() - start_time
-            
-            logger.info(f"[{request_id}] AI response received in {processing_time:.2f} seconds")
-            logger.info(f"[{request_id}] Full AI response: {ai_response.content}")
-
-            return JSONResponse(content={
-                "message": ai_response.content,
-                "request_id": request_id,
-                "processing_time": processing_time
+        langgraph_messages = output.get("messages", [])
+        # Convert LangChain message objects to JSON serializable format
+        serializable_messages = []
+        for msg in langgraph_messages:
+            serializable_messages.append({
+                "type": msg.__class__.__name__,
+                "content": msg.content
             })
 
-        elif user_intent == "WRITE_CODE":
-            prompt = client.pull_prompt("llamabot/design_planning_prompt")
-            prompt_value = prompt.invoke({"user_message": chat_message.message, "existing_html_content": existing_html_content})
-            logger.info(f"[{request_id}] Code writing prompt: {prompt_value}")
-            
-            ai_response_plan_and_design = llm.invoke(prompt_value)
-            processing_time = time.time() - start_time
-            
-            logger.info(f"[{request_id}] AI Plan and Design response received in {processing_time:.2f} seconds")
-            logger.info(f"[{request_id}] Full AI Plan and Design response: {ai_response_plan_and_design.content}")
-
-            prompt = client.pull_prompt("llamabot/after_planning_generate_html")
-            prompt_value = prompt.invoke({"user_message": chat_message.message, "existing_html_content": existing_html_content, "design_plan": ai_response_plan_and_design.content})
-            logger.info(f"[{request_id}] Code writing prompt: {prompt_value}")
-            
-            ai_response = llm.invoke(prompt_value)
-            processing_time = time.time() - start_time
-            
-            logger.info(f"[{request_id}] AI Write Code response received in {processing_time:.2f} seconds")
-            logger.info(f"[{request_id}] Full AI Write Code response: {ai_response.content}")
-            
-            # Write AI response to page.html
-            
-            try:
-                with open("page.html", "w") as f:
-                    f.write(ai_response.content)
-                logger.info(f"[{request_id}] Successfully wrote AI response to page.html")
-            except Exception as write_error:
-                logger.error(f"[{request_id}] Error writing to page.html: {str(write_error)}", exc_info=True)
-                raise write_error
-        
-            return JSONResponse(content={
-                "message": ai_response.content,
-                "request_id": request_id,
-                "processing_time": processing_time,
-                "decision": "WRITE_CODE"
-            })
-        else:
-            logger.warning(f"[{request_id}] Unexpected user intent: {user_intent}")
-            return JSONResponse(
-                content={
-                    "message": "I'm not sure how to handle that request. Could you please rephrase it?",
-                    "request_id": request_id
-                },
-                status_code=400
-            )
+        return JSONResponse(content={
+            "messages": serializable_messages,
+            "request_id": request_id,
+        })
         
     except Exception as e:
         logger.error(f"[{request_id}] Error processing message: {str(e)}", exc_info=True)

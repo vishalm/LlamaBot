@@ -3,20 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>3D First-Person Snake Game</title>
+  <title>3D First-Person Snake Game with Compass</title>
   <style>
     * { margin: 0; padding: 0; }
-    body { overflow: hidden; background: #333; }
+    body {
+      overflow: hidden;
+      background: purple;
+    }
     #score {
       position: absolute;
       top: 10px;
       left: 10px;
-      color: #fff;
+      color: #000;
       font: 20px sans-serif;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(255, 255, 255, 0.7);
       padding: 5px 10px;
       border-radius: 4px;
       z-index: 10;
+    }
+    #arrow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform-origin: center center;
+      font-size: 30px;
+      color: #e74c3c;
+      pointer-events: none;
+      z-index: 15;
+      display: none; /* show when game starts */
     }
     #overlay {
       position: absolute;
@@ -26,8 +40,8 @@
       justify-content: center;
       text-align: center;
       font: 24px sans-serif;
-      color: #fff;
-      background: rgba(0,0,0,0.8);
+      color: #000;
+      background: rgba(255, 255, 255, 0.8);
       cursor: pointer;
       z-index: 20;
     }
@@ -35,22 +49,24 @@
 </head>
 <body>
   <div id="score">Score: 0</div>
+  <div id="arrow">➤</div>
   <div id="overlay">
     Click to Play<br>
     Hold ↑ to move
   </div>
+
   <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
   <script>
     // === Configuration constants ===
-    const planeSize = 400;            // play area size
+    const planeSize = 400;
     const snakeSpeed = 0.2;
-    const turnSpeed = Math.PI / 120;  // turning speed
+    const turnSpeed = Math.PI / 120;
 
     let scene, camera, renderer;
     let snake = [], positions = [];
     let headMesh, food, score = 0;
     let direction = new THREE.Vector3(0, 0, -1);
-    let moveForward = false; // only move when ArrowUp is held
+    let moveForward = false;
 
     init();
     animate();
@@ -58,37 +74,27 @@
     function init() {
       scene = new THREE.Scene();
 
-      // grid floor
       const grid = new THREE.GridHelper(planeSize, planeSize, 0x888888, 0x444444);
       scene.add(grid);
-
-      // axes helper
       scene.add(new THREE.AxesHelper(5));
 
-      // camera
-      camera = new THREE.PerspectiveCamera(
-        75,
-        window.innerWidth / window.innerHeight,
-        0.1,
-        planeSize * 2
-      );
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, planeSize * 2);
       camera.position.set(0, 2, 0);
       camera.rotation.x = -0.2;
 
-      // lights
       scene.add(new THREE.AmbientLight(0x808080));
       const dlight = new THREE.DirectionalLight(0xffffff, 1);
       dlight.position.set(5, 10, 7.5);
       scene.add(dlight);
 
-      // head mesh (semi-transparent cube)
+      // Head mesh
       const headGeo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
       const headMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
       headMesh = new THREE.Mesh(headGeo, headMat);
       headMesh.position.set(0, 0, -0.5);
       camera.add(headMesh);
 
-      // initial snake body segments
+      // Initial snake segments
       const segGeo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
       const segMat = new THREE.MeshStandardMaterial({ color: 0x2ecc71 });
       for (let i = 0; i < 5; i++) {
@@ -98,17 +104,16 @@
         snake.push(seg);
         positions.push(seg.position.clone());
       }
-      // one extra history slot
       positions.push(camera.position.clone());
 
-      // food
+      // Food
       const fGeo = new THREE.SphereGeometry(0.3, 16, 16);
       const fMat = new THREE.MeshStandardMaterial({ color: 0xe74c3c });
       food = new THREE.Mesh(fGeo, fMat);
       placeFood();
       scene.add(food);
 
-      // renderer
+      // Renderer
       renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.domElement.setAttribute('tabindex', '0');
@@ -116,12 +121,13 @@
       document.body.appendChild(renderer.domElement);
       renderer.domElement.focus();
 
-      // event listeners
+      // Event listeners
       window.addEventListener('resize', onWindowResize);
       document.addEventListener('keydown', onKeyDown);
       document.addEventListener('keyup', onKeyUp);
       document.getElementById('overlay').addEventListener('click', () => {
         document.getElementById('overlay').style.display = 'none';
+        document.getElementById('arrow').style.display = 'block';
         renderer.domElement.focus();
       });
     }
@@ -149,35 +155,30 @@
         case 'ArrowUp':
           moveForward = true;
           break;
-        case 'ArrowDown':
-          // optional: could add backward movement
-          break;
       }
     }
 
     function onKeyUp(e) {
-      if (e.code === 'ArrowUp') {
-        moveForward = false;
-      }
+      if (e.code === 'ArrowUp') moveForward = false;
     }
 
     function animate() {
       requestAnimationFrame(animate);
 
-      // only advance when holding forward
+      // Move snake head and update positions
       if (moveForward) {
         camera.position.addScaledVector(direction, snakeSpeed);
         positions.unshift(camera.position.clone());
         positions.pop();
       }
 
-      // update snake segments
+      // Update segment positions
       snake.forEach((seg, i) => {
         const target = positions[i + 1];
         if (target) seg.position.copy(target);
       });
 
-      // check for food collision (horizontal plane)
+      // Check for food collision
       const dx = camera.position.x - food.position.x;
       const dz = camera.position.z - food.position.z;
       if (Math.hypot(dx, dz) < 0.5) {
@@ -186,6 +187,23 @@
         flashHead();
         growSnake();
         placeFood();
+      }
+
+      // Compass arrow logic
+      const arrowEl = document.getElementById('arrow');
+      if (arrowEl.style.display !== 'none') {
+        // forward vector in XZ plane
+        let forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+        forward.y = 0; forward.normalize();
+        // vector to food in XZ
+        let toFood = food.position.clone().sub(camera.position);
+        toFood.y = 0; toFood.normalize();
+        // signed angle between forward and toFood
+        let angle = Math.atan2(
+          forward.x * toFood.z - forward.z * toFood.x,
+          forward.x * toFood.x + forward.z * toFood.z
+        );
+        arrowEl.style.transform = 'translate(-50%, -50%) rotate(' + angle + 'rad)';
       }
 
       renderer.render(scene, camera);
