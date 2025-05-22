@@ -20,10 +20,8 @@ def write_html_code_node(state: State) -> State:
     return_response = agent.run(state.get("initial_user_message"), state.get("existing_html_content"), state.get("design_plan"))
 
     try:
-        breakpoint()
         with open("page.html", "w") as f:
             f.write(return_response)
-            breakpoint()
     except Exception as write_error:
         raise write_error
 
