@@ -1,235 +1,207 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>3D First-Person Snake Game with Compass</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Pomodoro Timer</title>
   <style>
-    * { margin: 0; padding: 0; }
+    :root {
+      --bg-page:        #121212;
+      --bg-card:        #1e1e1e;
+      --text-primary:   #e0e0e0;
+      --text-secondary: #aaa;
+      --border:         #333;
+      --btn-bg:         #388e3c;    /* work accent */
+      --btn-bg-hover:   #2e7d32;
+      --short-bg:       #1976d2;    /* short break accent */
+      --long-bg:        #fbc02d;    /* long break accent */
+      --tab-inactive:   #2e2e2e;
+    }
+    * { box-sizing: border-box; }
     body {
-      overflow: hidden;
-      background: purple;
+      margin: 0; padding: 0;
+      font-family: sans-serif;
+      background: var(--bg-page);
+      color: var(--text-primary);
+      display: flex; justify-content: center; align-items: center;
+      min-height: 100vh;
     }
-    #score {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      color: #000;
-      font: 20px sans-serif;
-      background: rgba(255, 255, 255, 0.7);
-      padding: 5px 10px;
-      border-radius: 4px;
-      z-index: 10;
-    }
-    #arrow {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform-origin: center center;
-      font-size: 30px;
-      color: #e74c3c;
-      pointer-events: none;
-      z-index: 15;
-      display: none; /* show when game starts */
-    }
-    #overlay {
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    #timer-container {
+      background: var(--bg-card);
+      padding: 20px 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+      border-top: 6px solid var(--btn-bg);
+      width: 280px;
       text-align: center;
-      font: 24px sans-serif;
-      color: #000;
-      background: rgba(255, 255, 255, 0.8);
+    }
+    #session-label {
+      font-size: 1.2em;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+      transition: color 0.3s, border-color 0.3s;
+    }
+    #timer-display {
+      font-size: 4em;
+      font-family: 'Courier New', monospace;
+      margin-bottom: 20px;
+      color: var(--text-primary);
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+    }
+    .controls .btn {
+      flex: 1;
+      padding: 10px 0;
+      font-size: 1em;
+      border: none;
+      border-radius: 4px;
       cursor: pointer;
-      z-index: 20;
+      transition: background 0.2s;
+      color: #fff;
+    }
+    .controls .btn.start {
+      background: var(--btn-bg);
+    }
+    .controls .btn.start:hover {
+      background: var(--btn-bg-hover);
+    }
+    .controls .btn.reset {
+      background: var(--tab-inactive);
+    }
+    .controls .btn.reset:hover {
+      background: var(--border);
     }
   </style>
 </head>
 <body>
-  <div id="score">Score: 0</div>
-  <div id="arrow">➤</div>
-  <div id="overlay">
-    Click to Play<br>
-    Hold ↑ to move
+  <div id="timer-container">
+    <div id="session-label">Work</div>
+    <div id="timer-display">25:00</div>
+    <div class="controls">
+      <button id="start-pause" class="btn start">Start</button>
+      <button id="reset" class="btn reset">Reset</button>
+    </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
   <script>
-    // === Configuration constants ===
-    const planeSize = 400;
-    const snakeSpeed = 0.2;
-    const turnSpeed = Math.PI / 120;
+  (function(){
+    // Durations in seconds
+    const DURATIONS = {
+      Work: 25 * 60,
+      'Short Break': 5 * 60,
+      'Long Break': 15 * 60
+    };
+    const ACCENTS = {
+      Work: getComputedStyle(document.documentElement).getPropertyValue('--btn-bg').trim(),
+      'Short Break': getComputedStyle(document.documentElement).getPropertyValue('--short-bg').trim(),
+      'Long Break': getComputedStyle(document.documentElement).getPropertyValue('--long-bg').trim()
+    };
 
-    let scene, camera, renderer;
-    let snake = [], positions = [];
-    let headMesh, food, score = 0;
-    let direction = new THREE.Vector3(0, 0, -1);
-    let moveForward = false;
+    let currentPhase = 'Work';
+    let remaining = DURATIONS[currentPhase];
+    let cycleCount = 0;
+    let intervalId = null;
+    let isRunning = false;
 
-    init();
-    animate();
+    const labelEl = document.getElementById('session-label');
+    const displayEl = document.getElementById('timer-display');
+    const containerEl = document.getElementById('timer-container');
+    const startBtn = document.getElementById('start-pause');
+    const resetBtn = document.getElementById('reset');
 
-    function init() {
-      scene = new THREE.Scene();
+    function formatTime(sec) {
+      const m = String(Math.floor(sec / 60)).padStart(2, '0');
+      const s = String(sec % 60).padStart(2, '0');
+      return `${m}:${s}`;
+    }
 
-      const grid = new THREE.GridHelper(planeSize, planeSize, 0x888888, 0x444444);
-      scene.add(grid);
-      scene.add(new THREE.AxesHelper(5));
+    function updateDisplay() {
+      displayEl.textContent = formatTime(remaining);
+      labelEl.textContent = currentPhase;
+      // update accent border and start button if needed
+      const accent = ACCENTS[currentPhase];
+      containerEl.style.borderTopColor = accent;
+      labelEl.style.color = accent;
+    }
 
-      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, planeSize * 2);
-      camera.position.set(0, 2, 0);
-      camera.rotation.x = -0.2;
-
-      scene.add(new THREE.AmbientLight(0x808080));
-      const dlight = new THREE.DirectionalLight(0xffffff, 1);
-      dlight.position.set(5, 10, 7.5);
-      scene.add(dlight);
-
-      // Head mesh
-      const headGeo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
-      const headMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
-      headMesh = new THREE.Mesh(headGeo, headMat);
-      headMesh.position.set(0, 0, -0.5);
-      camera.add(headMesh);
-
-      // Initial snake segments
-      const segGeo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-      const segMat = new THREE.MeshStandardMaterial({ color: 0x2ecc71 });
-      for (let i = 0; i < 5; i++) {
-        const seg = new THREE.Mesh(segGeo, segMat);
-        seg.position.set(0, 0.25, i * 0.6);
-        scene.add(seg);
-        snake.push(seg);
-        positions.push(seg.position.clone());
+    function switchPhase() {
+      if (currentPhase === 'Work') {
+        cycleCount++;
+        if (cycleCount % 4 === 0) {
+          currentPhase = 'Long Break';
+        } else {
+          currentPhase = 'Short Break';
+        }
+      } else {
+        currentPhase = 'Work';
       }
-      positions.push(camera.position.clone());
-
-      // Food
-      const fGeo = new THREE.SphereGeometry(0.3, 16, 16);
-      const fMat = new THREE.MeshStandardMaterial({ color: 0xe74c3c });
-      food = new THREE.Mesh(fGeo, fMat);
-      placeFood();
-      scene.add(food);
-
-      // Renderer
-      renderer = new THREE.WebGLRenderer({ antialias: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.domElement.setAttribute('tabindex', '0');
-      renderer.domElement.style.outline = 'none';
-      document.body.appendChild(renderer.domElement);
-      renderer.domElement.focus();
-
-      // Event listeners
-      window.addEventListener('resize', onWindowResize);
-      document.addEventListener('keydown', onKeyDown);
-      document.addEventListener('keyup', onKeyUp);
-      document.getElementById('overlay').addEventListener('click', () => {
-        document.getElementById('overlay').style.display = 'none';
-        document.getElementById('arrow').style.display = 'block';
-        renderer.domElement.focus();
-      });
+      remaining = DURATIONS[currentPhase];
+      updateDisplay();
+      beep();
+      startTimer();
     }
 
-    function placeFood() {
-      const range = planeSize / 2;
-      const y = camera.position.y;
-      food.position.set(
-        (Math.random() - 0.5) * range,
-        y,
-        (Math.random() - 0.5) * range
-      );
-    }
-
-    function onKeyDown(e) {
-      switch (e.code) {
-        case 'ArrowLeft':
-          camera.rotation.y += turnSpeed;
-          direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), turnSpeed);
-          break;
-        case 'ArrowRight':
-          camera.rotation.y -= turnSpeed;
-          direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), -turnSpeed);
-          break;
-        case 'ArrowUp':
-          moveForward = true;
-          break;
+    function updateTimer() {
+      if (remaining > 0) {
+        remaining--;
+        updateDisplay();
+      } else {
+        clearInterval(intervalId);
+        intervalId = null;
+        isRunning = false;
+        startBtn.textContent = 'Start';
+        switchPhase();
       }
     }
 
-    function onKeyUp(e) {
-      if (e.code === 'ArrowUp') moveForward = false;
+    function startTimer() {
+      if (isRunning) return;
+      isRunning = true;
+      startBtn.textContent = 'Pause';
+      intervalId = setInterval(updateTimer, 1000);
     }
 
-    function animate() {
-      requestAnimationFrame(animate);
+    function pauseTimer() {
+      if (!isRunning) return;
+      clearInterval(intervalId);
+      intervalId = null;
+      isRunning = false;
+      startBtn.textContent = 'Start';
+    }
 
-      // Move snake head and update positions
-      if (moveForward) {
-        camera.position.addScaledVector(direction, snakeSpeed);
-        positions.unshift(camera.position.clone());
-        positions.pop();
+    function resetTimer() {
+      pauseTimer();
+      remaining = DURATIONS[currentPhase];
+      updateDisplay();
+    }
+
+    function beep() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.connect(g);
+        g.connect(ctx.destination);
+        o.type = 'sine';
+        o.frequency.value = 440;
+        o.start(0);
+        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5);
+        setTimeout(() => ctx.close(), 600);
+      } catch (e) {
+        console.warn('Beep failed', e);
       }
-
-      // Update segment positions
-      snake.forEach((seg, i) => {
-        const target = positions[i + 1];
-        if (target) seg.position.copy(target);
-      });
-
-      // Check for food collision
-      const dx = camera.position.x - food.position.x;
-      const dz = camera.position.z - food.position.z;
-      if (Math.hypot(dx, dz) < 0.5) {
-        score++;
-        document.getElementById('score').innerText = 'Score: ' + score;
-        flashHead();
-        growSnake();
-        placeFood();
-      }
-
-      // Compass arrow logic
-      const arrowEl = document.getElementById('arrow');
-      if (arrowEl.style.display !== 'none') {
-        // forward vector in XZ plane
-        let forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-        forward.y = 0; forward.normalize();
-        // vector to food in XZ
-        let toFood = food.position.clone().sub(camera.position);
-        toFood.y = 0; toFood.normalize();
-        // signed angle between forward and toFood
-        let angle = Math.atan2(
-          forward.x * toFood.z - forward.z * toFood.x,
-          forward.x * toFood.x + forward.z * toFood.z
-        );
-        arrowEl.style.transform = 'translate(-50%, -50%) rotate(' + angle + 'rad)';
-      }
-
-      renderer.render(scene, camera);
     }
 
-    function flashHead() {
-      headMesh.material.color.set(0xffff00);
-      setTimeout(() => headMesh.material.color.set(0xffffff), 100);
-    }
+    startBtn.addEventListener('click', () => {
+      isRunning ? pauseTimer() : startTimer();
+    });
+    resetBtn.addEventListener('click', resetTimer);
 
-    function growSnake() {
-      const segGeo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-      const segMat = new THREE.MeshStandardMaterial({ color: 0x2ecc71 });
-      const seg = new THREE.Mesh(segGeo, segMat);
-      const lastPos = positions[positions.length - 1];
-      seg.position.copy(lastPos || camera.position);
-      scene.add(seg);
-      snake.push(seg);
-      positions.push(seg.position.clone());
-    }
-
-    function onWindowResize() {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    }
+    // initialize UI
+    updateDisplay();
+  })();
   </script>
 </body>
 </html>
