@@ -476,6 +476,8 @@
                                     // Append the new value to our stored full content
                                     const currentFullContent = nodeContent.getAttribute('data-full-content');
                                     const newFullContent = currentFullContent + data.value;
+                                    // console.log('Received data from stream:', data.value);
+                                    console.log('Got data from stream:', data);
                                     nodeContent.setAttribute('data-full-content', newFullContent);
                                     
                                     // Update the displayed content (show full content, not truncated)
@@ -559,6 +561,9 @@
                                         </svg>
                                         Complete
                                     `;
+
+                                    //close the live preview
+                                    hideLivePreview();
                                     
                                     // Display the final message content
                                     if (data.messages && data.messages.length > 0) {
@@ -576,8 +581,9 @@
                                     setTimeout(() => {
                                         iframe.src = iframe.src;
                                     }, 100);
-                                } 
-                                else if (data.type === 'end') {
+
+                                    //close the live preview
+                                    hideLivePreview();
                                     console.log('Stream ended:', data.request_id);
                                     
                                     // Update status to show completion with check mark

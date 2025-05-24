@@ -110,6 +110,9 @@ async def chat_message(chat_message: ChatMessage):
                             # Log the streaming output
                             logger.info(f"[{request_id}] Stream update from {langgraph_node_info['langgraph_node']}: {str(message_from_llm)[:100]}...")
 
+
+                            #TODO: Broken. Type: "update" is needed for the live preview to work.
+                            ## BUT, type: "message" is needed for the chat to work.
                             # Send node update
                             yield json.dumps({
                                 "type": "update",
@@ -129,7 +132,7 @@ async def chat_message(chat_message: ChatMessage):
 
                             # Send node update
                             yield json.dumps({
-                                "type": "update",
+                                "type": "not_update", #TODO: This has no impact on the front-end right now. This update_stream_type
                                 "node": node_step_name,
                                 "value": str(updated_langgraph_state_object)  # Convert value to string for safety
                             }) + "\n"
@@ -146,6 +149,12 @@ async def chat_message(chat_message: ChatMessage):
             }) + "\n"
         finally:
             logger.info(f"[{request_id}] Stream completed")
+            # Send final update telling agent we're done
+            yield json.dumps({
+                "type": "final", #TODO: This update_stream_type
+                "node": "final",
+                "value": "final"  # Convert value to string for safety
+            }) + "\n"
 
     # Return a streaming response
     return StreamingResponse(
