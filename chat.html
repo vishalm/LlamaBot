@@ -346,6 +346,15 @@
                 const processedNodes = new Map();
                 let activeStep = '';
                 
+                let shouldAutoScroll = true;
+
+                // Add event listener to detect manual scrolling
+                messageHistory.addEventListener('scroll', function() {
+                    // Check if user is near bottom (within 50px)
+                    const isNearBottom = messageHistory.scrollHeight - messageHistory.scrollTop - messageHistory.clientHeight < 50;
+                    shouldAutoScroll = isNearBottom;
+                });
+                
                 try {
                     // Set up fetch for streaming
                     const response = await fetch('http://localhost:8000/chat-message', {
@@ -388,8 +397,8 @@
                                 const data = JSON.parse(line);
                                 
                                 if (data.type === 'start') {
-                                    console.log('Stream started:', data.request_id);
-                                    statusIndicator.innerHTML = 'Stream started...';
+                                    console.log('Thinking...', data.request_id);
+                                    statusIndicator.innerHTML = 'Thinking...';
                                 } 
                                 else if (data.type === 'update') {
                                     // Format the node name for display
@@ -517,7 +526,9 @@
                                     }
                                     
                                     // Always scroll to the bottom of the message history
-                                    messageHistory.scrollTop = messageHistory.scrollHeight;
+                                    if (shouldAutoScroll) {
+                                        messageHistory.scrollTop = messageHistory.scrollHeight;
+                                    }
                                 } 
                                 else if (data.type === 'final') {
                                     // Update status to show completion
