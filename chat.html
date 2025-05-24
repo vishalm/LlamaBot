@@ -280,6 +280,11 @@
     </div>
 
     <script>
+        // Add these declarations at the top level, outside any function
+        let htmlPreviewContent = '';
+        let lastSentPosition = 0;
+        const CONTENT_CHUNK_SIZE = 80; // Send 80 characters at a time
+
         async function sendMessage() {
             const input = document.getElementById('messageInput');
             const messageText = input.value.trim();
@@ -289,6 +294,10 @@
                 const inputArea = document.querySelector('.input-area');
                 const spinner = document.querySelector('.loading-spinner');
                 const iframe = document.querySelector('.iframe-section iframe');
+                
+                // Reset buffer for new message
+                htmlPreviewContent = '';
+                lastSentPosition = 0;
                 
                 // Show loading state
                 spinner.style.display = 'block';
@@ -512,6 +521,18 @@
                                         // Append the new content
                                         codeElement.textContent += data.value;
                                         
+                                        // Add to HTML preview content
+                                        htmlPreviewContent += data.value;
+                                        
+                                        console.log('HTML content updated, length:', htmlPreviewContent.length, 'Last sent:', lastSentPosition);
+                                        
+                                        // Start or continue processing preview
+                                        if (!window.processingPreview) {
+                                            window.processingPreview = true;
+                                            console.log('Starting preview processing');
+                                            processPreviewContent();
+                                        }
+                                        
                                         // Scroll the code block to the bottom
                                         codeDisplay.scrollTop = codeDisplay.scrollHeight;
                                         
@@ -574,6 +595,14 @@
                                         responseContent.innerHTML = "I've processed your request.";
                                     }
                                     
+                                    // Reset HTML preview content
+                                    htmlPreviewContent = '';
+                                    lastSentPosition = 0;
+                                    window.processingPreview = false;
+                                    
+                                    // Hide the preview overlay
+                                    hideLivePreview();
+                                    
                                     // Refresh the iframe to show any HTML changes
                                     setTimeout(() => {
                                         iframe.src = iframe.src;
@@ -606,6 +635,132 @@
                 sendMessage();
             }
         });
+
+        // Replace handleFragment with this new function
+        function updateLivePreview(codeSnippet) {
+            let previewOverlay = document.getElementById('livePreviewOverlay');
+            if (!previewOverlay) {
+                // Create overlay container with basic styles
+                previewOverlay = document.createElement('div');
+                previewOverlay.id = 'livePreviewOverlay';
+                previewOverlay.style.position = 'fixed';
+                previewOverlay.style.top = '0';
+                previewOverlay.style.left = '0';
+                previewOverlay.style.width = '100%';
+                previewOverlay.style.height = '100%';
+                previewOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
+                previewOverlay.style.display = 'flex';
+                previewOverlay.style.alignItems = 'center';
+                previewOverlay.style.justifyContent = 'center';
+                previewOverlay.style.zIndex = '10000';
+
+                // Create the preview container
+                const previewContainer = document.createElement('div');
+                previewContainer.style.width = '75%';
+                previewContainer.style.height = '85%';
+                previewContainer.style.backgroundColor = '#fff';
+                previewContainer.style.borderRadius = '10px';
+                previewContainer.style.position = 'relative';
+
+                // Create the preview frame
+                const previewFrame = document.createElement('iframe');
+                previewFrame.id = 'previewFrame';
+                previewFrame.style.width = '100%';
+                previewFrame.style.height = '100%';
+                previewFrame.style.border = 'none';
+                previewFrame.style.borderRadius = '10px';
+
+                // Create overlay div
+                const overlay = document.createElement('div');
+                overlay.style.position = 'absolute';
+                overlay.style.top = '0';
+                overlay.style.left = '0';
+                overlay.style.width = '100%';
+                overlay.style.height = '100%';
+                overlay.style.background = 'rgba(0, 0, 0, 0.45)';
+                overlay.style.display = 'flex';
+                overlay.style.alignItems = 'center';
+                overlay.style.justifyContent = 'center';
+                overlay.style.borderRadius = '10px';
+                overlay.style.zIndex = '1';
+
+                // Create text for overlay
+                const overlayText = document.createElement('div');
+                overlayText.style.color = 'white';
+                overlayText.style.fontSize = '40px';
+                overlayText.style.fontWeight = 'bold';
+                overlayText.style.fontFamily = 'Arial, sans-serif';
+                overlayText.style.textAlign = 'center';
+                overlayText.style.padding = '20px';
+
+                // Append all elements
+                overlay.appendChild(overlayText);
+                previewContainer.appendChild(previewFrame);
+                previewContainer.appendChild(overlay);
+                previewOverlay.appendChild(previewContainer);
+                document.body.appendChild(previewOverlay);
+
+                // Add a content property to store HTML
+                previewOverlay.htmlContent = '';
+            }
+
+            previewOverlay.style.display = 'flex';
+            const previewFrame = document.getElementById('previewFrame');
+            
+            if (typeof codeSnippet === 'string') {
+                // Append the new code to our content
+                previewOverlay.htmlContent += codeSnippet;
+                
+                try {
+                    const frameDoc = previewFrame.contentDocument;
+                    frameDoc.open();
+                    frameDoc.write(previewOverlay.htmlContent);
+                    frameDoc.close();
+                    
+                    // Auto-scroll
+                    if (frameDoc.documentElement) {
+                        frameDoc.documentElement.scrollTop = frameDoc.documentElement.scrollHeight;
+                    }
+                    if (frameDoc.body) {
+                        frameDoc.body.scrollTop = frameDoc.body.scrollHeight;
+                    }
+                } catch (e) {
+                    console.log('Error updating live preview:', e);
+                }
+            } else {
+                console.error('Invalid content type:', codeSnippet);
+            }
+        }
+
+        // Replace processHtmlBuffer with this
+        function processPreviewContent() {
+            console.log('Processing content, position:', lastSentPosition, 'of', htmlPreviewContent.length);
+            if (htmlPreviewContent.length > lastSentPosition) {
+                const chunk = htmlPreviewContent.substring(lastSentPosition, lastSentPosition + CONTENT_CHUNK_SIZE);
+                lastSentPosition += chunk.length;
+                console.log('Sending chunk of length:', chunk.length);
+                updateLivePreview(chunk);
+                
+                // If there's more to process, schedule the next chunk
+                if (htmlPreviewContent.length > lastSentPosition) {
+                    setTimeout(processPreviewContent, 60); // Process every 60ms for a smooth effect
+                } else {
+                    window.processingPreview = false;
+                    console.log('Content processing complete');
+                }
+            } else {
+                window.processingPreview = false;
+                console.log('No more content to process');
+            }
+        }
+
+        // Replace hideFragmentModal with this
+        function hideLivePreview() {
+            const previewOverlay = document.getElementById('livePreviewOverlay');
+            if (previewOverlay) {
+                previewOverlay.style.display = 'none';
+            }
+        }
     </script>
 </body>
 </html>
