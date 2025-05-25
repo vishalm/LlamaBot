@@ -83,7 +83,7 @@ LangGraph workflow produces / edits code snippets
 
 WebSocket push updates the preview pane instantly
 
-All orchestration logic lives in app.py; UI templates are under /templates.
+All orchestration logic lives in agents folder.
 
 ## 📂 Project Structure
 
