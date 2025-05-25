@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>3D First-Person Snake with Minimap</title>
+  <style>
+    html, body {
+      margin: 0; padding: 0;
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: #f5f5f5;
+      font-family: sans-serif;
+    }
+    #gameCanvas {
+      display: block;
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 1;
+    }
+    #scoreBoard {
+      position: absolute;
+      top: 10px; left: 10px;
+      z-index: 2;
+      padding: 6px 12px;
+      background: rgba(255,255,255,0.8);
+      border: 1px solid #333;
+      font-size: 1.2rem;
+      color: #333;
+    }
+    #controls {
+      position: absolute;
+      bottom: 10px; left: 10px;
+      z-index: 2;
+    }
+    #controls button {
+      margin: 0 4px;
+      padding: 6px 12px;
+      font-size: 1rem;
+      cursor: pointer;
+      border: 1px solid #333;
+      background: #fff;
+    }
+    #controls button:hover {
+      background: #eee;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.min.js"></script>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+  <div id="scoreBoard">Score: 0</div>
+  <div id="controls">
+    <button id="startBtn">Start</button>
+    <button id="pauseBtn">Pause</button>
+    <button id="resetBtn">Reset</button>
+  </div>
+
+  <script>
+  window.addEventListener('load', () => {
+    // Renderer and Canvas
+    const canvas = document.getElementById('gameCanvas');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.autoClear = false;
+    // Scene
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xa0a0a0);
+
+    // Grid Floor
+    const gridSize = 30;    // grid cells
+    const blockSize = 1;    // world unit per cell
+    const floor = new THREE.GridHelper(gridSize * blockSize, gridSize, 0x444444, 0x888888);
+    floor.position.set((gridSize*blockSize)/2 - blockSize/2, 0, (gridSize*blockSize)/2 - blockSize/2);
+    scene.add(floor);
+
+    // Cameras
+    const mainCamera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+    const halfGrid = (gridSize * blockSize) / 2;
+    const miniCamSize = halfGrid;
+    const minimapCamera = new THREE.OrthographicCamera(
+      -halfGrid, halfGrid,
+       halfGrid, -halfGrid,
+       0.1, 1000
+    );
+    minimapCamera.position.set(halfGrid, 50, halfGrid);
+    minimapCamera.up.set(0, 0, -1);
+    minimapCamera.lookAt(halfGrid, 0, halfGrid);
+
+    // Lighting
+    const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambient);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    dirLight.position.set(0, 50, 0);
+    scene.add(dirLight);
+
+    // Snake and Food
+    const snakeMaterial = new THREE.MeshLambertMaterial({ color: 0x4caf50 });
+    const foodMaterial  = new THREE.MeshLambertMaterial({ color: 0xf44336 });
+    let snake = [];     // array of { mesh, x, y }
+    let direction = { x: 1, y: 0 };
+    let food = { x: 0, y: 0, mesh: null };
+    let score = 0;
+    let gameInterval = null;
+    const updateInterval = 200; // ms
+    let isPaused = false;
+
+    // HTML UI
+    const scoreBoard = document.getElementById('scoreBoard');
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    function updateScore() {
+      scoreBoard.textContent = 'Score: ' + score;
+    }
+
+    function placeFood() {
+      // remove old
+      if (food.mesh) scene.remove(food.mesh);
+      let fx, fy;
+      do {
+        fx = Math.floor(Math.random() * gridSize);
+        fy = Math.floor(Math.random() * gridSize);
+      } while (snake.some(s => s.x === fx && s.y === fy));
+      food.x = fx; food.y = fy;
+      const g = new THREE.BoxGeometry(blockSize*0.8, blockSize*0.8, blockSize*0.8);
+      const m = new THREE.Mesh(g, foodMaterial);
+      m.position.set(fx*blockSize, blockSize/2, fy*blockSize);
+      scene.add(m);
+      food.mesh = m;
+    }
+
+    function initGame() {
+      // clear old snake
+      snake.forEach(s => scene.remove(s.mesh));
+      snake = [];
+
+      // init direction and score
+      direction = { x: 1, y: 0 };
+      score = 0; updateScore();
+
+      // create initial snake in center
+      const startX = Math.floor(gridSize/2);
+      const startY = Math.floor(gridSize/2);
+      for (let i = 0; i < 5; i++) {
+        const x = startX - i;
+        const y = startY;
+        const geom = new THREE.BoxGeometry(blockSize*0.9, blockSize*0.9, blockSize*0.9);
+        const mesh = new THREE.Mesh(geom, snakeMaterial);
+        mesh.position.set(x*blockSize, blockSize/2, y*blockSize);
+        scene.add(mesh);
+        snake.push({ mesh, x, y });
+      }
+
+      placeFood();
+      isPaused = true;
+      clearInterval(gameInterval);
+      gameInterval = null;
+    }
+
+    function gameOver() {
+      clearInterval(gameInterval);
+      gameInterval = null;
+      alert('Game Over! Your score: ' + score);
+      isPaused = true;
+    }
+
+    function updateSnake() {
+      if (isPaused) return;
+      // compute new head
+      const head = snake[0];
+      const nx = head.x + direction.x;
+      const ny = head.y + direction.y;
+      // collisions
+      if (
+        nx < 0 || nx >= gridSize ||
+        ny < 0 || ny >= gridSize ||
+        snake.some(s => s.x === nx && s.y === ny)
+      ) {
+        gameOver();
+        return;
+      }
+      // eat?
+      const ate = (nx === food.x && ny === food.y);
+      if (ate) {
+        score++; updateScore();
+        placeFood();
+      }
+
+      // move tail to head or add new segment
+      let newSeg;
+      if (ate) {
+        const geom = new THREE.BoxGeometry(blockSize*0.9, blockSize*0.9, blockSize*0.9);
+        newSeg = new THREE.Mesh(geom, snakeMaterial);
+        scene.add(newSeg);
+      } else {
+        newSeg = snake.pop().mesh;
+      }
+      newSeg.position.set(nx*blockSize, blockSize/2, ny*blockSize);
+      const segObj = { mesh: newSeg, x: nx, y: ny };
+      snake.unshift(segObj);
+    }
+
+    function startGame() {
+      if (gameInterval) return;
+      if (isPaused) isPaused = false;
+      gameInterval = setInterval(updateSnake, updateInterval);
+    }
+    function pauseGame() {
+      isPaused = true;
+    }
+    function resetGame() {
+      initGame();
+    }
+
+    // Controls
+    function onKey(e) {
+      if (isPaused && e.keyCode !== 32) return;
+      const left = [37,65], up = [38,87], right = [39,68], down = [40,83];
+      if (left.includes(e.keyCode) && direction.x === 0)  direction = {x:-1,y:0};
+      if (right.includes(e.keyCode)&& direction.x === 0)  direction = {x:1,y:0};
+      if (up.includes(e.keyCode)   && direction.y === 0)  direction = {x:0,y:-1};
+      if (down.includes(e.keyCode) && direction.y === 0)  direction = {x:0,y:1};
+      if (e.keyCode === 32) { // space
+        if (isPaused) startGame();
+        else pauseGame();
+      }
+    }
+    document.addEventListener('keydown', onKey);
+    startBtn.addEventListener('click', startGame);
+    pauseBtn.addEventListener('click', pauseGame);
+    resetBtn.addEventListener('click', resetGame);
+
+    // Resize handler
+    function onResize() {
+      const w = window.innerWidth, h = window.innerHeight;
+      renderer.setSize(w, h);
+      mainCamera.aspect = w / h;
+      mainCamera.updateProjectionMatrix();
+      // minimap uses fixed ortho bounds
+    }
+    window.addEventListener('resize', onResize);
+
+    // Animation
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.clear();
+
+      // Position main camera on head
+      const head = snake[0];
+      const hx = head.x * blockSize, hz = head.y * blockSize;
+      mainCamera.position.set(hx, blockSize/2, hz);
+      const lookX = hx + direction.x * blockSize;
+      const lookZ = hz + direction.y * blockSize;
+      mainCamera.lookAt(lookX, blockSize/2, lookZ);
+
+      // full view
+      const W = window.innerWidth, H = window.innerHeight;
+      renderer.setViewport(0, 0, W, H);
+      renderer.setScissor(0, 0, W, H);
+      renderer.setScissorTest(true);
+      renderer.render(scene, mainCamera);
+
+      // minimap view (top-right)
+      const vw = Math.floor(W / 4), vh = Math.floor(H / 4);
+      const px = W - vw - 10, py = H - vh - 10;
+      renderer.setViewport(px, py, vw, vh);
+      renderer.setScissor(px, py, vw, vh);
+      renderer.render(scene, minimapCamera);
+    }
+
+    // Start
+    onResize();
+    initGame();
+    animate();
+  });
+  </script>
+</body>
+</html>
