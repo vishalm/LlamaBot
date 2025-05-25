@@ -83,6 +83,11 @@ WebSocket push updates the preview pane instantly
 
 All orchestration logic lives in agents folder.
 
+## 🧠 Agent Architecture
+<div align="center">
+<img src="https://llamapress-ai-image-uploads.s3.us-west-2.amazonaws.com/jpx9zdi6xirmo7xmfhmq6nsoiuhg" width="700" alt="LlamaBot Agent Architecture">
+</div>
+
 ## 📂 Project Structure
 
 ```
@@ -104,7 +109,7 @@ LlamaBot/
 ## View the key prompts this agent uses here: 
 [![LLM Prompts](https://img.shields.io/badge/LangSmith-Prompts-blue?style=for-the-badge&logo=langchain)](https://smith.langchain.com/hub/llamabot)
 
-## 💡 Example Prompts
+## 💡 Example Prompts to Try
 
 | Goal | Prompt |
 |------|--------|
