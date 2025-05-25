@@ -9,6 +9,7 @@
 _The open-source AI coding agent that chats, writes, and live-previews your web apps._
 
 [![Live Site](https://img.shields.io/badge/Visit-LlamaPress.ai-brightgreen?style=for-the-badge&logo=safari)](https://llamapress.ai)
+[![LLM Prompts](https://img.shields.io/badge/LangSmith-Prompts-blue?style=for-the-badge&logo=langchain)](https://smith.langchain.com/hub/llamabot)
 [![MIT License](https://img.shields.io/github/license/KodyKendall/LlamaBot?style=for-the-badge)](LICENSE)
 [![Discord](https://img.shields.io/badge/Join-Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/HtVVSxrK)
 
@@ -103,6 +104,9 @@ LlamaBot/
 │   └── state.py
 └── requirements.txt
 ```
+
+## View the key prompts this agent uses here: 
+[![LLM Prompts](https://img.shields.io/badge/LangSmith-Prompts-blue?style=for-the-badge&logo=langchain)](https://smith.langchain.com/hub/llamabot)
 
 ## 💡 Example Prompts
 
