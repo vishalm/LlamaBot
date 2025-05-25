@@ -10,6 +10,7 @@ _The open-source AI coding agent that chats, writes, and live-previews your web 
 
 [![Live Site](https://img.shields.io/badge/Visit-LlamaPress.ai-brightgreen?style=for-the-badge&logo=safari)](https://llamapress.ai)
 [![MIT License](https://img.shields.io/github/license/KodyKendall/LlamaBot?style=for-the-badge)](LICENSE)
+[![Discord](https://img.shields.io/badge/Join-Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/HtVVSxrK)
 
 <!-- Demo GIF -->
 <br>
