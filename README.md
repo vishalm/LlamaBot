@@ -86,19 +86,22 @@ WebSocket push updates the preview pane instantly
 All orchestration logic lives in app.py; UI templates are under /templates.
 
 ## 📂 Project Structure
+
+```
 LlamaBot/
 ├── app.py           # FastAPI + LangGraph server
-├── chat.html    # Chat interface
-├── page.html    # Live preview
+├── chat.html        # Chat interface
+├── page.html        # Live preview
 ├── agents/ 
-    ├── base_agent.py
-    ├── design_and_plan.py
-    ├── write_code.py
-    ├── respond_naturally.py
-    ├── route_initial_user_request.py
-    ├── nodes.py
-    └── state.py
+│   ├── base_agent.py
+│   ├── design_and_plan.py
+│   ├── write_code.py
+│   ├── respond_naturally.py
+│   ├── route_initial_user_request.py
+│   ├── nodes.py
+│   └── state.py
 └── requirements.txt
+```
 
 ## 💡 Example Prompts
 Goal	Prompt
