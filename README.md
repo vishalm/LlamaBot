@@ -105,11 +105,13 @@ LlamaBot/
 ```
 
 ## 💡 Example Prompts
-Goal	Prompt
-Build Snake game	“Create a simple Snake game with arrow-key controls.”
-Personal portfolio	“Generate a minimal personal site with About, Projects, and Contact sections.”
-SaaS landing page	“Design a SaaS landing page hero with CTA and pricing table.”
-Mortgage calculator	“Make a responsive mortgage calculator that outputs monthly payment.”
+
+| Goal | Prompt |
+|------|--------|
+| Build Snake game | "Create a simple Snake game with arrow-key controls." |
+| Personal portfolio | "Generate a minimal personal site with About, Projects, and Contact sections." |
+| SaaS landing page | "Design a SaaS landing page hero with CTA and pricing table." |
+| Mortgage calculator | "Make a responsive mortgage calculator that outputs monthly payment." |
 
 ## 🤝 Contributing
 Fork the repo
