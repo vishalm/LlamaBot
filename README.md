@@ -85,7 +85,7 @@ All orchestration logic lives in agents folder.
 
 ## 🧠 Agent Architecture
 <div align="center">
-<img src="https://llamapress-ai-image-uploads.s3.us-west-2.amazonaws.com/jpx9zdi6xirmo7xmfhmq6nsoiuhg" width="700" alt="LlamaBot Agent Architecture">
+<img src="https://llamapress-ai-image-uploads.s3.us-west-2.amazonaws.com/jpx9zdi6xirmo7xmfhmq6nsoiuhg" width="400" alt="LlamaBot Agent Architecture">
 </div>
 
 ## 📂 Project Structure
