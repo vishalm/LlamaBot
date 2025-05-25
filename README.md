@@ -65,10 +65,6 @@ pip install -r requirements.txt
 # 4 — Add your secrets
 cat <<EOF > .env
 OPENAI_API_KEY=sk-...
-LANGSMITH_API_KEY=ls-...
-LANGSMITH_ENDPOINT=https://api.smith.langchain.com
-LANGSMITH_PROJECT=llamabot-open-source
-LANGSMITH_TRACING=true
 EOF
 ```
 
