@@ -40,6 +40,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount the examples directory to serve example files
+app.mount("/examples", StaticFiles(directory="examples"), name="examples")
+
 # Initialize the ChatOpenAI client
 llm = ChatOpenAI(
     model="o4-mini-2025-04-16"
@@ -51,9 +54,11 @@ client = Client(api_key=os.getenv("LANGSMITH_API_KEY"))
 class ChatMessage(BaseModel):
     message: str
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 async def root():
-    return {"message": "hello world"}
+    # Serve the home.html file
+    with open("home.html") as f:
+        return f.read()
 
 @app.post("/chat-message")
 async def chat_message(chat_message: ChatMessage):
