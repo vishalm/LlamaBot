@@ -11,7 +11,7 @@ _The open-source AI coding agent that chats, writes, and live-previews your web 
 [![Live Site](https://img.shields.io/badge/Visit-LlamaPress.ai-brightgreen?style=for-the-badge&logo=safari)](https://llamapress.ai)
 [![LLM Prompts](https://img.shields.io/badge/LangSmith-Prompts-blue?style=for-the-badge&logo=langchain)](https://smith.langchain.com/hub/llamabot)
 [![MIT License](https://img.shields.io/github/license/KodyKendall/LlamaBot?style=for-the-badge)](LICENSE)
-![Stars last 10 d](https://img.shields.io/badge/dynamic/json?color=brightgreen&label=stars%20last%2010d&query=%24.count&url=https://raw.githubusercontent.com/kodykendall/llamabot/stargazers-custom-badge/.github/badges/stars_last10.json)
+[![Stars last 10d](https://img.shields.io/badge/dynamic/json?style=for-the-badge&label=stars%20last%2010d&labelColor=555&color=brightgreen&query=%24.count&url=https://raw.githubusercontent.com/kodykendall/llamabot/main/.github/badges/stars_last10.json)](https://github.com/KodyKendall/LlamaBot/stargazers)
 [![Discord](https://img.shields.io/badge/Join-Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/HtVVSxrK)
 
 <!-- Demo GIF -->
