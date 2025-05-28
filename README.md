@@ -96,12 +96,13 @@ LlamaBot/
 ├── app.py           # FastAPI + LangGraph server
 ├── chat.html        # Chat interface
 ├── page.html        # Live preview
+├── home.html        # Home page
 ├── agents/ 
 │   ├── base_agent.py
 │   ├── design_and_plan.py
-│   ├── write_code.py
+│   ├── write_html_code.py
 │   ├── respond_naturally.py
-│   ├── route_initial_user_request.py
+│   ├── route_initial_user_message.py
 │   ├── nodes.py
 │   └── state.py
 └── requirements.txt
