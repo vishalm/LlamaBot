@@ -128,7 +128,7 @@ Create a feature branch: git checkout -b feat/awesome
 Commit, push, and open a PR 🎉
 
 ## 📜 License
-Distributed under the MIT License – see LICENSE for full text.
+Distributed under the MIT License – see [LICENSE](LICENSE) for full text.
 
 <div align="center">
 Made with ❤️ in San Francisco, by Kody Kendall — inspired by the next wave of AI code-gen tools.
