@@ -96,12 +96,13 @@ LlamaBot/
 ├── app.py           # FastAPI + LangGraph server
 ├── chat.html        # Chat interface
 ├── page.html        # Live preview
+├── home.html        # Home page
 ├── agents/ 
 │   ├── base_agent.py
 │   ├── design_and_plan.py
-│   ├── write_code.py
+│   ├── write_html_code.py
 │   ├── respond_naturally.py
-│   ├── route_initial_user_request.py
+│   ├── route_initial_user_message.py
 │   ├── nodes.py
 │   └── state.py
 └── requirements.txt
@@ -127,7 +128,7 @@ Create a feature branch: git checkout -b feat/awesome
 Commit, push, and open a PR 🎉
 
 ## 📜 License
-Distributed under the MIT License – see LICENSE for full text.
+Distributed under the MIT License – see [LICENSE](LICENSE) for full text.
 
 <div align="center">
 Made with ❤️ in San Francisco, by Kody Kendall — inspired by the next wave of AI code-gen tools.
