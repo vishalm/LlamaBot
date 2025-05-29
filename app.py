@@ -43,6 +43,9 @@ app.add_middleware(
 # Mount the examples directory to serve example files
 app.mount("/examples", StaticFiles(directory="examples"), name="examples")
 
+# Mount the assets directory to serve static assets (images, audio, .glb files, etc.)
+app.mount("/assets", StaticFiles(directory="assets"), name="assets")
+
 # Initialize the ChatOpenAI client
 llm = ChatOpenAI(
     model="o4-mini-2025-04-16"
