@@ -107,24 +107,38 @@
             background-color: var(--chat-bg);
             border-top: 1px solid var(--border-color);
             display: flex;
+            flex-direction: column;
             gap: 0.8rem;
             position: relative;
         }
 
-        .input-area input {
-            flex-grow: 1;
+        .input-area textarea {
+            width: 100%;
             padding: 0.8rem 1rem;
             border: 1px solid var(--border-color);
             border-radius: 8px;
             background-color: var(--input-bg);
             color: var(--text-color);
             font-size: 0.95rem;
+            font-family: inherit;
             transition: border-color 0.2s;
+            resize: none;
+            min-height: 2.5rem;
+            max-height: 12rem; /* Roughly 10 lines */
+            overflow-y: auto;
+            line-height: 1.2;
+            white-space: pre-wrap;
+            word-wrap: break-word;
         }
 
-        .input-area input:focus {
+        .input-area textarea:focus {
             outline: none;
             border-color: var(--accent-color);
+        }
+
+        .button-row {
+            display: flex;
+            justify-content: flex-end;
         }
 
         .input-area button {
@@ -136,6 +150,7 @@
             cursor: pointer;
             transition: background-color 0.2s;
             font-weight: 500;
+            align-self: flex-end;
         }
 
         .input-area button:hover {
@@ -160,7 +175,7 @@
         }
 
         /* Disable input and button while loading */
-        .input-area.loading input,
+        .input-area.loading textarea,
         .input-area.loading button {
             opacity: 0.7;
             pointer-events: none;
@@ -271,8 +286,10 @@
             <div class="loading-spinner"></div>
         </div>
         <div class="input-area">
-            <input type="text" placeholder="Type your message..." id="messageInput">
-            <button onclick="sendMessage()">Send</button>
+            <textarea placeholder="Type your message..." id="messageInput"></textarea>
+            <div class="button-row">
+                <button onclick="sendMessage()">Send</button>
+            </div>
         </div>
     </div>
     <div class="iframe-section">
@@ -635,11 +652,26 @@
             }
         }
 
-        // Allow Enter key to send message
-        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+        // Allow Enter key to send message, Shift+Enter for new line
+        document.getElementById('messageInput').addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
-                sendMessage();
+                if (e.shiftKey) {
+                    // Allow default behavior (new line) when Shift+Enter
+                    return;
+                } else {
+                    // Prevent default and send message when just Enter
+                    e.preventDefault();
+                    sendMessage();
+                }
             }
+        });
+
+        // Auto-resize textarea as content grows
+        document.getElementById('messageInput').addEventListener('input', function() {
+            // Reset height to auto to get the correct scrollHeight
+            this.style.height = 'auto';
+            // Set height to scrollHeight, but respect max-height set in CSS
+            this.style.height = this.scrollHeight + 'px';
         });
 
         // Replace handleFragment with this new function
