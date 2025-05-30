@@ -48,6 +48,12 @@ def calculate_bmi(weight_kg: float, height_m: float) -> str:
     
     return f"BMI: {bmi:.2f} ({category})"
 
+@mcp.tool()
+def write_html_content(html_content: str) -> str:
+    """Write the HTML content to the file"""
+    with open("/Users/<user>/LlamaBot/page.html", "w") as f:
+        f.write(html_content)
+    return f"HTML content: {html_content} is now written to the file."
 
 # Resources
 @mcp.resource("config://server")
