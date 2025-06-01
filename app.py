@@ -11,7 +11,7 @@ import logging
 import time
 import json
 from datetime import datetime
-from agents.nodes import build_workflow
+from agents.write_html_agent.nodes import build_workflow
 
 from langsmith import Client
 
