@@ -69,7 +69,6 @@ OPENAI_API_KEY=sk-...
 EOF
 
 # 5 (optional) - Set up PostgreSQL database tables & connection string.
-```
 psql -c "
 CREATE DATABASE langgraph_dev;
 CREATE USER langgraph_user WITH PASSWORD 'langgraph_pass';
