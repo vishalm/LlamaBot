@@ -1,7 +1,7 @@
 {
     "dependencies": ["."],
     "graphs": {
-      "chat": "./agents/nodes.py:build_workflow"
+      "write_html": "./agents/write_html_agent/nodes.py:build_workflow"
     }
   }
   

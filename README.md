@@ -67,9 +67,22 @@ pip install -r requirements.txt
 cat <<EOF > .env
 OPENAI_API_KEY=sk-...
 EOF
+
+# 5 (optional) - Set up PostgreSQL database tables & connection string.
+```
+psql -c "
+CREATE DATABASE langgraph_dev;
+CREATE USER langgraph_user WITH PASSWORD 'langgraph_pass';
+GRANT ALL PRIVILEGES ON DATABASE langgraph_dev TO langgraph_user;
+\c langgraph_dev;
+GRANT USAGE ON SCHEMA public TO langgraph_user;
+GRANT CREATE ON SCHEMA public TO langgraph_user;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO langgraph_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO langgraph_user;
+"
 ```
 
-# 5 — Run it
+# 6 — Run it
 uvicorn app:app --reload
 Browse to http://localhost:8000/chat and start building.
 
@@ -86,26 +99,39 @@ All orchestration logic lives in agents folder.
 
 ## 🧠 Agent Architecture
 <div align="center">
-<img src="https://llamapress-ai-image-uploads.s3.us-west-2.amazonaws.com/jpx9zdi6xirmo7xmfhmq6nsoiuhg" width="400" alt="LlamaBot Agent Architecture">
+<img src="https://www.kodykendall.com/wp-content/uploads/2025/06/Screenshot-2025-06-01-at-1.32.14%E2%80%AFPM.png" width="400" alt="LlamaBot Agent Architecture">
 </div>
 
 ## 📂 Project Structure
 
 ```
-LlamaBot/
-├── app.py           # FastAPI + LangGraph server
-├── chat.html        # Chat interface
-├── page.html        # Live preview
-├── home.html        # Home page
-├── agents/ 
-│   ├── base_agent.py
-│   ├── design_and_plan.py
-│   ├── write_html_code.py
-│   ├── respond_naturally.py
-│   ├── route_initial_user_message.py
-│   ├── nodes.py
-│   └── state.py
-└── requirements.txt
+LlamaBotSimple/
+├── app.py                          # FastAPI application with streaming endpoints
+├── chat.html                       # Chat interface UI
+├── home.html                       # Landing page
+├── page.html                       # Generated content display
+├── chat_app.log                    # Application logs
+├── langgraph.json                  # LangGraph configuration
+├── requirements.txt                # Python dependencies
+├── agents/
+│   ├── __init__.py
+│   ├── base_agent.py               # Base agent functionality
+│   ├── react_agent/
+│   │   └── nodes.py                # ReACT workflow implementation
+│   ├── write_html_agent/           # Archived for educational purposes. v1.
+│   │   ├── nodes.py                # Main workflow orchestration
+│   │   ├── state.py                # Agent state definition
+│   │   ├── design_and_plan.py      # Planning and design logic
+│   │   ├── write_html_code.py      # HTML/CSS/JS generation in 1 file.
+│   │   ├── respond_naturally.py    # Natural language responses
+│   │   └── route_initial_user_message.py  # Initial message routing
+│   └── utils/                      # Shared utilities
+├── assets/                         # Static assets (CSS, JS, images)
+├── docs/                           # Documentation
+├── examples/                       # Example files and demos
+├── experiments/                    # Experimental features
+├── mcp/                           # MCP (Model Context Protocol) integration
+└── venv/                          # Python virtual environment
 ```
 
 ## View the key prompts this agent uses here: 
