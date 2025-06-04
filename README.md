@@ -82,7 +82,7 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO langgraph_user;
 ```
 
 # 6 — Run it
-uvicorn app:app --reload
+`uvicorn app:app --reload`
 Browse to http://localhost:8000/chat and start building.
 
 ## 🛠️ How It Works
