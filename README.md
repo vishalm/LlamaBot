@@ -67,9 +67,22 @@ pip install -r requirements.txt
 cat <<EOF > .env
 OPENAI_API_KEY=sk-...
 EOF
+
+# 5 (optional) - Set up PostgreSQL database tables & connection string.
+```
+psql -c "
+CREATE DATABASE langgraph_dev;
+CREATE USER langgraph_user WITH PASSWORD 'langgraph_pass';
+GRANT ALL PRIVILEGES ON DATABASE langgraph_dev TO langgraph_user;
+\c langgraph_dev;
+GRANT USAGE ON SCHEMA public TO langgraph_user;
+GRANT CREATE ON SCHEMA public TO langgraph_user;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO langgraph_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO langgraph_user;
+"
 ```
 
-# 5 — Run it
+# 6 — Run it
 uvicorn app:app --reload
 Browse to http://localhost:8000/chat and start building.
 

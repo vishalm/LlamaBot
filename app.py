@@ -11,7 +11,10 @@ import logging
 import time
 import json
 from datetime import datetime
-from agents.write_html_agent.nodes import build_workflow
+from agents.react_agent.nodes import build_workflow
+from langgraph.checkpoint.postgres import PostgresSaver
+from langgraph.checkpoint.memory import MemorySaver
+from psycopg_pool import ConnectionPool
 
 from langsmith import Client
 
@@ -57,6 +60,29 @@ client = Client(api_key=os.getenv("LANGSMITH_API_KEY"))
 class ChatMessage(BaseModel):
     message: str
 
+# Application state to hold persistent checkpointer, important for session-based persistence.
+app.state.checkpointer = None
+
+def get_or_create_checkpointer():
+    """Get persistent checkpointer, creating once if needed"""
+    if app.state.checkpointer is None:
+        db_uri = os.getenv("DB_URI")
+        if db_uri:
+            try:
+                # Create connection pool and PostgresSaver directly
+                pool = ConnectionPool(db_uri)
+                app.state.checkpointer = PostgresSaver(pool)
+                app.state.checkpointer.setup()
+                logger.info("Using PostgreSQL persistence.")
+            except Exception as e:
+                logger.warning(f"Failed to connect to PostgreSQL: {e}. Using MemorySaver.")
+                app.state.checkpointer = MemorySaver()
+        else:
+            logger.info("No DB_URI found. Using MemorySaver for session-based persistence.")
+            app.state.checkpointer = MemorySaver()
+    
+    return app.state.checkpointer
+
 @app.get("/", response_class=HTMLResponse)
 async def root():
     # Serve the home.html file
@@ -86,13 +112,18 @@ async def chat_message(chat_message: ChatMessage):
                 "request_id": request_id
             }) + "\n"
 
-            # Build graph and create stream
-            graph = build_workflow()
+            thread_id = "5"
+            
+            checkpointer = get_or_create_checkpointer()
+            graph = build_workflow(checkpointer=checkpointer)
             stream = graph.stream({
                 "messages": [HumanMessage(content=chat_message.message)],
                 "initial_user_message": chat_message.message,
                 "existing_html_content": existing_html_content
-            }, stream_mode=["updates", "messages"]) # "values" is the third option ( to return the entire state object )
+                }, 
+                config={"configurable": {"thread_id": thread_id}},
+                stream_mode=["updates", "messages"] # "values" is the third option ( to return the entire state object )
+            ) 
 
             # Track the final state to serialize at the end
             final_state = None
@@ -147,7 +178,6 @@ async def chat_message(chat_message: ChatMessage):
                     else:
                         # Handle other formats or just log
                         logger.info(f"[{request_id}] Received chunk in unknown format: {type(chunk)}")
-
         except Exception as e:
             logger.error(f"[{request_id}] Error in stream: {str(e)}", exc_info=True)
             yield json.dumps({
@@ -179,3 +209,12 @@ async def chat():
 async def page():
     with open("page.html") as f:
         return f.read()
+    
+@app.get("/chat-history/{thread_id}")
+async def chat_history(thread_id: str):
+    checkpointer = get_or_create_checkpointer()
+    graph = build_workflow(checkpointer=checkpointer)
+    config = {"configurable": {"thread_id": thread_id}}
+    state_history = graph.get_state(config=config)
+    print(state_history)
+    return state_history
