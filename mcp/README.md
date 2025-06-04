@@ -6,6 +6,7 @@ This directory contains examples of Model Context Protocol (MCP) client and serv
 
 - `mcp_client.py` - MCP client examples for stdio and HTTP transports
 - `mcp_server.py` - Simple MCP server with tools, resources, and prompts
+- `run_mcp_server.sh` - Wrapper script for Claude Desktop integration
 - `README.md` - This file
 
 ## Installation
@@ -176,4 +177,4 @@ You can modify the server to:
 For more information, see:
 - [MCP Documentation](https://modelcontextprotocol.io)
 - [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk)
-- [MCP Specification](https://spec.modelcontextprotocol.io) 
+- [MCP Specification](https://spec.modelcontextprotocol.io)
