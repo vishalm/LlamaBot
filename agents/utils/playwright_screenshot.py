@@ -3,7 +3,6 @@ from bs4 import BeautifulSoup
 import re
 import asyncio
 
-
 async def capture_page_and_img_src(url: str, image_path: str) -> tuple[str, list[str]]:
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
@@ -14,8 +13,9 @@ async def capture_page_and_img_src(url: str, image_path: str) -> tuple[str, list
         print(f"Screenshot saved to {image_path}")
 
         html = await page.content()
+        
         image_sources = await page.query_selector_all('img')
-        image_sources = [img.get_attribute('src') for img in image_sources]
+        image_sources = [await img.get_attribute('src') for img in image_sources]
         print(f"Image sources: {image_sources}")
 
         await browser.close()
