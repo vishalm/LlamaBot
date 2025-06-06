@@ -64,20 +64,50 @@ export const useChatStore = create<ChatState>()(
       selectConversation: async (conversationId: string) => {
         set({ isLoading: true, error: null });
         try {
+          console.log('Loading conversation:', conversationId);
           const conversation = await apiService.getConversationHistory(conversationId);
-          const messages = conversation.state?.messages || [];
+          console.log('Conversation data:', conversation);
+          
+          // Since it's an array, let's check each element for messages
+          let messages: any[] = [];
+          
+          if (Array.isArray(conversation)) {
+            console.log('Searching for messages in array elements...');
+            conversation.forEach((element, index) => {
+              console.log(`Element ${index}:`, element);
+              
+              // Check if this element has messages
+              if (element && typeof element === 'object') {
+                if (element.messages && Array.isArray(element.messages)) {
+                  console.log(`Found messages in element ${index}:`, element.messages);
+                  messages = element.messages;
+                } else if (element.state && element.state.messages) {
+                  console.log(`Found messages in element ${index}.state:`, element.state.messages);
+                  messages = element.state.messages;
+                }
+              }
+            });
+          } else {
+            // Original logic for object structure
+            messages = conversation.state?.messages || [];
+          }
+          
+          console.log('Final messages:', messages);
+          
           const uiMessages = apiService.convertToUIMessages(messages);
+          console.log('UI messages:', uiMessages);
           
           set({
             currentConversationId: conversationId,
             currentMessages: uiMessages,
-            
             isLoading: false
           });
         } catch (error) {
+          console.error('Error loading conversation:', error);
           set({ 
             error: error instanceof Error ? error.message : 'Failed to load conversation',
-            isLoading: false 
+            isLoading: false,
+            currentMessages: []
           });
         }
       },
