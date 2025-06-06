@@ -13,6 +13,8 @@ interface ChatState {
   isLoading: boolean;
   isStreaming: boolean;
   error: string | null;
+  isSidebarVisible: boolean;
+  selectedModel: string;
   
   // Actions
   loadConversations: () => Promise<void>;
@@ -21,6 +23,8 @@ interface ChatState {
   sendMessage: (message: string) => Promise<void>;
   setError: (error: string | null) => void;
   clearError: () => void;
+  toggleSidebar: () => void;
+  setSelectedModel: (model: string) => void;
 }
 
 export const useChatStore = create<ChatState>()(
@@ -33,6 +37,8 @@ export const useChatStore = create<ChatState>()(
       isLoading: false,
       isStreaming: false,
       error: null,
+      isSidebarVisible: true,
+      selectedModel: 'o4-mini-2025-04-16',
 
       // Load all conversations
       loadConversations: async () => {
@@ -222,6 +228,16 @@ export const useChatStore = create<ChatState>()(
       // Clear error
       clearError: () => {
         set({ error: null });
+      },
+
+      // Toggle sidebar visibility
+      toggleSidebar: () => {
+        set({ isSidebarVisible: !get().isSidebarVisible });
+      },
+
+      // Set selected model
+      setSelectedModel: (model: string) => {
+        set({ selectedModel: model });
       },
     }),
     {

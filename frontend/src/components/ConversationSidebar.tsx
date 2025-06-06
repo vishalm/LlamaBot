@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, MessageCircle } from 'lucide-react';
+import { Plus, MessageCircle, ChevronLeft } from 'lucide-react';
 import { useChatStore } from '@/stores/chatStore';
 import type { ConversationSummary } from '@/types/chat';
 
@@ -62,9 +62,11 @@ export const ConversationSidebar: React.FC = () => {
     conversations, 
     currentConversationId, 
     isLoading,
+    isSidebarVisible,
     selectConversation,
     createNewConversation,
     loadConversations,
+    toggleSidebar,
     error
   } = useChatStore();
 
@@ -80,17 +82,29 @@ export const ConversationSidebar: React.FC = () => {
     selectConversation(conversationId);
   };
 
+  if (!isSidebarVisible) {
+    return null;
+  }
+
   return (
     <div className="w-1/4 h-full flex flex-col bg-dark-sidebar border-r border-dark-border">
       {/* Header */}
       <div className="h-15 px-4 py-3 bg-dark-chat border-b border-dark-border flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-dark-text">Conversations</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-dark-text">Conversations</h2>
+          <button
+            onClick={toggleSidebar}
+            className="p-1 text-dark-text/60 hover:text-dark-text hover:bg-dark-border/30 rounded transition-colors"
+            title="Collapse sidebar"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+        </div>
         <button
           onClick={handleNewChat}
           className="flex items-center gap-2 px-3 py-2 bg-dark-accent text-white text-sm font-medium rounded-md hover:bg-dark-accent/80 transition-colors"
         >
           <Plus className="w-4 h-4" />
-          New Chat
         </button>
       </div>
 

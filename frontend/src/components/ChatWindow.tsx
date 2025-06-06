@@ -1,5 +1,5 @@
 import React from 'react';
-import { Send, Bot, User, Loader2 } from 'lucide-react';
+import { Send, User, Loader2, Menu, ChevronDown } from 'lucide-react';
 import { useChatStore } from '@/stores/chatStore';
 import type { UIMessage } from '@/types/chat';
 
@@ -14,7 +14,11 @@ const Message: React.FC<MessageProps> = ({ message }) => {
     <div className={`flex gap-3 mb-4 ${isUser ? 'justify-end' : 'justify-start'}`}>
       {!isUser && (
         <div className="w-8 h-8 rounded-full bg-dark-accent flex items-center justify-center flex-shrink-0">
-          <Bot className="w-4 h-4 text-white" />
+          <img 
+            src="https://service-jobs-images.s3.us-east-2.amazonaws.com/7rl98t1weu387r43il97h6ipk1l7" 
+            alt="LlamaBot" 
+            className="w-8 h-8 rounded-full"
+          />
         </div>
       )}
       
@@ -112,34 +116,123 @@ const MessageInput: React.FC<MessageInputProps> = ({
   );
 };
 
+// Available models for the dropdown
+const AVAILABLE_MODELS = [
+    { value: 'o4-mini', label: 'o4 Mini' },
+    // { value: 'o4-mini-2025-04-16', label: 'o4 Mini (2025-04-16)' },
+    // { value: 'o3', label: 'o3' },
+    // { value: 'gpt-4o', label: 'gpt-4o' },
+    // { value: 'gpt-3.5-turbo', label: 'gpt-3.5-turbo' },
+];
+
 export const ChatWindow: React.FC = () => {
   const { 
     currentMessages, 
     currentConversationId,
     isStreaming,
     error,
+    isSidebarVisible,
+    selectedModel,
     sendMessage,
-    clearError 
+    clearError,
+    toggleSidebar,
+    setSelectedModel
   } = useChatStore();
 
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+  const [isModelDropdownOpen, setIsModelDropdownOpen] = React.useState(false);
 
   // Auto-scroll to bottom when new messages arrive
   React.useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [currentMessages]);
 
+  // Close dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsModelDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const handleSendMessage = (message: string) => {
     if (error) clearError();
     sendMessage(message);
   };
 
+  const handleModelSelect = (model: string) => {
+    setSelectedModel(model);
+    setIsModelDropdownOpen(false);
+  };
+
+  const selectedModelLabel = AVAILABLE_MODELS.find(m => m.value === selectedModel)?.label || selectedModel;
+
   if (!currentConversationId) {
     return (
       <div className="flex-1 h-full flex flex-col bg-dark-chat">
+        {/* Header - always show even when no conversation */}
+        <div className="h-15 px-4 py-3 bg-dark-chat border-b border-dark-border flex items-center gap-3">
+          {!isSidebarVisible && (
+            <button
+              onClick={toggleSidebar}
+              className="p-2 text-dark-text hover:bg-dark-border/30 rounded transition-colors"
+              title="Show sidebar"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          )}
+          
+          <img 
+            src="https://service-jobs-images.s3.us-east-2.amazonaws.com/7rl98t1weu387r43il97h6ipk1l7" 
+            alt="LlamaBot" 
+            className="w-8 h-8 rounded-full"
+          />
+          <h1 className="text-xl font-semibold text-dark-text">LlamaBot</h1>
+          
+          <div className="ml-auto flex items-center gap-4">
+            {/* Model Selector */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
+                className="flex items-center gap-2 px-3 py-2 bg-dark-input border border-dark-border rounded-md text-dark-text hover:border-dark-accent transition-colors"
+              >
+                <span className="text-sm">{selectedModelLabel}</span>
+                <ChevronDown className="w-4 h-4" />
+              </button>
+              
+              {isModelDropdownOpen && (
+                <div className="absolute right-0 top-full mt-1 w-64 bg-dark-input border border-dark-border rounded-md shadow-lg z-50">
+                  {AVAILABLE_MODELS.map((model) => (
+                    <button
+                      key={model.value}
+                      onClick={() => handleModelSelect(model.value)}
+                      className={`w-full text-left px-3 py-2 text-sm hover:bg-dark-border/30 transition-colors first:rounded-t-md last:rounded-b-md ${
+                        selectedModel === model.value ? 'bg-dark-accent text-white' : 'text-dark-text'
+                      }`}
+                    >
+                      {model.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        
         <div className="flex-1 flex items-center justify-center text-center text-dark-text/60">
           <div>
-            <Bot className="w-16 h-16 mx-auto mb-4 text-dark-text/30" />
+            <img 
+              src="https://service-jobs-images.s3.us-east-2.amazonaws.com/7rl98t1weu387r43il97h6ipk1l7" 
+              alt="LlamaBot" 
+              className="w-16 h-16 mx-auto mb-4 rounded-full opacity-30"
+            />
             <h3 className="text-xl font-semibold mb-2">Welcome to LlamaBot</h3>
             <p>Select a conversation or start a new one to get started!</p>
           </div>
@@ -152,7 +245,21 @@ export const ChatWindow: React.FC = () => {
     <div className="flex-1 h-full flex flex-col bg-dark-chat">
       {/* Header */}
       <div className="h-15 px-4 py-3 bg-dark-chat border-b border-dark-border flex items-center gap-3">
-        <Bot className="w-8 h-8 text-dark-accent" />
+        {!isSidebarVisible && (
+          <button
+            onClick={toggleSidebar}
+            className="p-2 text-dark-text hover:bg-dark-border/30 rounded transition-colors"
+            title="Show sidebar"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
+        
+        <img 
+          src="https://service-jobs-images.s3.us-east-2.amazonaws.com/7rl98t1weu387r43il97h6ipk1l7" 
+          alt="LlamaBot" 
+          className="w-8 h-8 rounded-full"
+        />
         <h1 className="text-xl font-semibold text-dark-text">LlamaBot</h1>
         {isStreaming && (
           <div className="text-sm text-dark-accent flex items-center gap-2">
@@ -160,6 +267,35 @@ export const ChatWindow: React.FC = () => {
             Thinking...
           </div>
         )}
+        
+        <div className="ml-auto flex items-center gap-4">
+          {/* Model Selector */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
+              className="flex items-center gap-2 px-3 py-2 bg-dark-input border border-dark-border rounded-md text-dark-text hover:border-dark-accent transition-colors"
+            >
+              <span className="text-sm">{selectedModelLabel}</span>
+              <ChevronDown className="w-4 h-4" />
+            </button>
+            
+            {isModelDropdownOpen && (
+              <div className="absolute right-0 top-full mt-1 w-64 bg-dark-input border border-dark-border rounded-md shadow-lg z-50">
+                {AVAILABLE_MODELS.map((model) => (
+                  <button
+                    key={model.value}
+                    onClick={() => handleModelSelect(model.value)}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-dark-border/30 transition-colors first:rounded-t-md last:rounded-b-md ${
+                      selectedModel === model.value ? 'bg-dark-accent text-white' : 'text-dark-text'
+                    }`}
+                  >
+                    {model.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Messages */}
@@ -167,7 +303,11 @@ export const ChatWindow: React.FC = () => {
         {currentMessages.length === 0 ? (
           <div className="flex items-center justify-center h-full text-dark-text/60">
             <div className="text-center">
-              <Bot className="w-12 h-12 mx-auto mb-3 text-dark-accent" />
+              <img 
+                src="https://service-jobs-images.s3.us-east-2.amazonaws.com/7rl98t1weu387r43il97h6ipk1l7" 
+                alt="LlamaBot" 
+                className="w-12 h-12 mx-auto mb-3 rounded-full"
+              />
               <p>Start a conversation by sending a message below!</p>
             </div>
           </div>
