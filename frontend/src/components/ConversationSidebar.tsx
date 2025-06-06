@@ -81,7 +81,7 @@ export const ConversationSidebar: React.FC = () => {
   };
 
   return (
-    <div className="w-1/3 h-full flex flex-col bg-dark-sidebar border-r border-dark-border">
+    <div className="w-1/4 h-full flex flex-col bg-dark-sidebar border-r border-dark-border">
       {/* Header */}
       <div className="h-15 px-4 py-3 bg-dark-chat border-b border-dark-border flex items-center justify-between">
         <h2 className="text-lg font-semibold text-dark-text">Conversations</h2>
