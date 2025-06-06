@@ -3,7 +3,7 @@ export interface BaseMessage {
   content: string;
   additional_kwargs: Record<string, unknown>;
   response_metadata: Record<string, unknown>;
-  type: 'human' | 'ai';
+  type: 'human' | 'ai' | 'system' | 'tool' | 'function';
   name: string | null;
   id: string;
   example: boolean;
@@ -20,7 +20,21 @@ export interface HumanMessage extends BaseMessage {
   type: 'human';
 }
 
-export type Message = AIMessage | HumanMessage;
+export interface SystemMessage extends BaseMessage {
+  type: 'system';
+}
+
+export interface ToolMessage extends BaseMessage {
+  type: 'tool';
+  tool_call_id?: string;
+}
+
+export interface FunctionMessage extends BaseMessage {
+  type: 'function';
+  function_call_id?: string;
+}
+
+export type Message = AIMessage | HumanMessage | SystemMessage | ToolMessage | FunctionMessage;
 
 // Conversation/Thread types
 export interface ConversationState {
@@ -35,9 +49,11 @@ export interface Conversation {
 // UI-specific message type for easier handling
 export interface UIMessage {
   id: string;
-  type: 'user' | 'ai';
+  type: 'user' | 'ai' | 'system' | 'tool' | 'function';
   content: string;
   timestamp?: Date;
+  toolName?: string;
+  toolCallId?: string;
 }
 
 // API request/response types

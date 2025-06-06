@@ -83,12 +83,59 @@ class ApiService {
 
   // Utility function to convert API messages to UI messages
   convertToUIMessages(messages: Message[]): UIMessage[] {
-    return messages.map((msg) => ({
-      id: msg.id,
-      type: msg.type === 'human' ? 'user' : 'ai',
-      content: msg.content,
-      timestamp: new Date(), // You might want to extract timestamp from the message if available
-    }));
+    return messages.map((msg) => {
+      let type: UIMessage['type'];
+      let toolName: string | undefined;
+      let toolCallId: string | undefined;
+
+      switch (msg.type) {
+        case 'human':
+          type = 'user';
+          break;
+        case 'ai':
+          type = 'ai';
+          break;
+        case 'system':
+          type = 'system';
+          break;
+        case 'tool':
+          type = 'tool';
+          // Extract tool name from the name field or content
+          toolName = msg.name || this.extractToolNameFromContent(msg.content);
+          toolCallId = (msg as any).tool_call_id;
+          break;
+        case 'function':
+          type = 'function';
+          toolName = msg.name || this.extractToolNameFromContent(msg.content);
+          toolCallId = (msg as any).function_call_id;
+          break;
+        default:
+          type = 'ai'; // fallback
+      }
+
+      return {
+        id: msg.id,
+        type,
+        content: msg.content,
+        timestamp: new Date(), // You might want to extract timestamp from the message if available
+        toolName,
+        toolCallId,
+      };
+    });
+  }
+
+  // Helper function to extract tool name from content
+  private extractToolNameFromContent(content: string): string | undefined {
+    // Try to extract tool name from common patterns
+    if (content.includes('written to')) {
+      if (content.includes('HTML')) return 'write_html';
+      if (content.includes('CSS')) return 'write_css';
+      if (content.includes('JavaScript')) return 'write_javascript';
+    }
+    if (content.includes('screenshot') || content.includes('clone')) {
+      return 'get_screenshot_and_html_content_using_playwright';
+    }
+    return undefined;
   }
 
   // Generate conversation summary from messages
