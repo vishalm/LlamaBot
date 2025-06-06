@@ -116,14 +116,13 @@ const MessageInput: React.FC<MessageInputProps> = ({
   );
 };
 
-// Available models for the dropdown
-const AVAILABLE_MODELS = [
-    { value: 'o4-mini', label: 'o4 Mini' },
-    // { value: 'o4-mini-2025-04-16', label: 'o4 Mini (2025-04-16)' },
-    // { value: 'o3', label: 'o3' },
-    // { value: 'gpt-4o', label: 'gpt-4o' },
-    // { value: 'gpt-3.5-turbo', label: 'gpt-3.5-turbo' },
-];
+// Helper function to format agent names for display
+const formatAgentName = (agentName: string): string => {
+  return agentName
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
 
 export const ChatWindow: React.FC = () => {
   const { 
@@ -132,27 +131,35 @@ export const ChatWindow: React.FC = () => {
     isStreaming,
     error,
     isSidebarVisible,
-    selectedModel,
+    selectedAgent,
+    availableAgents,
+    isLoadingAgents,
     sendMessage,
     clearError,
     toggleSidebar,
-    setSelectedModel
+    setSelectedAgent,
+    loadAvailableAgents
   } = useChatStore();
 
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
-  const [isModelDropdownOpen, setIsModelDropdownOpen] = React.useState(false);
+  const [isAgentDropdownOpen, setIsAgentDropdownOpen] = React.useState(false);
 
   // Auto-scroll to bottom when new messages arrive
   React.useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [currentMessages]);
 
+  // Load available agents on component mount
+  React.useEffect(() => {
+    loadAvailableAgents();
+  }, [loadAvailableAgents]);
+
   // Close dropdown when clicking outside
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsModelDropdownOpen(false);
+        setIsAgentDropdownOpen(false);
       }
     };
 
@@ -167,12 +174,10 @@ export const ChatWindow: React.FC = () => {
     sendMessage(message);
   };
 
-  const handleModelSelect = (model: string) => {
-    setSelectedModel(model);
-    setIsModelDropdownOpen(false);
+  const handleAgentSelect = (agent: string) => {
+    setSelectedAgent(agent);
+    setIsAgentDropdownOpen(false);
   };
-
-  const selectedModelLabel = AVAILABLE_MODELS.find(m => m.value === selectedModel)?.label || selectedModel;
 
   if (!currentConversationId) {
     return (
@@ -197,29 +202,38 @@ export const ChatWindow: React.FC = () => {
           <h1 className="text-xl font-semibold text-dark-text">LlamaBot</h1>
           
           <div className="ml-auto flex items-center gap-4">
-            {/* Model Selector */}
+            {/* Agent Selector */}
             <div className="relative" ref={dropdownRef}>
               <button
-                onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
+                onClick={() => setIsAgentDropdownOpen(!isAgentDropdownOpen)}
                 className="flex items-center gap-2 px-3 py-2 bg-dark-input border border-dark-border rounded-md text-dark-text hover:border-dark-accent transition-colors"
+                disabled={isLoadingAgents}
               >
-                <span className="text-sm">{selectedModelLabel}</span>
+                <span className="text-sm">
+                  {isLoadingAgents ? 'Loading...' : (selectedAgent ? formatAgentName(selectedAgent) : 'Select Agent')}
+                </span>
                 <ChevronDown className="w-4 h-4" />
               </button>
               
-              {isModelDropdownOpen && (
+              {isAgentDropdownOpen && !isLoadingAgents && (
                 <div className="absolute right-0 top-full mt-1 w-64 bg-dark-input border border-dark-border rounded-md shadow-lg z-50">
-                  {AVAILABLE_MODELS.map((model) => (
-                    <button
-                      key={model.value}
-                      onClick={() => handleModelSelect(model.value)}
-                      className={`w-full text-left px-3 py-2 text-sm hover:bg-dark-border/30 transition-colors first:rounded-t-md last:rounded-b-md ${
-                        selectedModel === model.value ? 'bg-dark-accent text-white' : 'text-dark-text'
-                      }`}
-                    >
-                      {model.label}
-                    </button>
-                  ))}
+                  {availableAgents.length === 0 ? (
+                    <div className="px-3 py-2 text-sm text-dark-text/60">
+                      No agents available
+                    </div>
+                  ) : (
+                    availableAgents.map((agent) => (
+                      <button
+                        key={agent}
+                        onClick={() => handleAgentSelect(agent)}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-dark-border/30 transition-colors first:rounded-t-md last:rounded-b-md ${
+                          selectedAgent === agent ? 'bg-dark-accent text-white' : 'text-dark-text'
+                        }`}
+                      >
+                        {formatAgentName(agent)}
+                      </button>
+                    ))
+                  )}
                 </div>
               )}
             </div>
@@ -261,6 +275,11 @@ export const ChatWindow: React.FC = () => {
           className="w-8 h-8 rounded-full"
         />
         <h1 className="text-xl font-semibold text-dark-text">LlamaBot</h1>
+        {selectedAgent && (
+          <span className="text-sm text-dark-text/60 px-2 py-1 bg-dark-input rounded-md">
+            {formatAgentName(selectedAgent)}
+          </span>
+        )}
         {isStreaming && (
           <div className="text-sm text-dark-accent flex items-center gap-2">
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -269,29 +288,38 @@ export const ChatWindow: React.FC = () => {
         )}
         
         <div className="ml-auto flex items-center gap-4">
-          {/* Model Selector */}
+          {/* Agent Selector */}
           <div className="relative" ref={dropdownRef}>
             <button
-              onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
+              onClick={() => setIsAgentDropdownOpen(!isAgentDropdownOpen)}
               className="flex items-center gap-2 px-3 py-2 bg-dark-input border border-dark-border rounded-md text-dark-text hover:border-dark-accent transition-colors"
+              disabled={isLoadingAgents}
             >
-              <span className="text-sm">{selectedModelLabel}</span>
+              <span className="text-sm">
+                {isLoadingAgents ? 'Loading...' : (selectedAgent ? formatAgentName(selectedAgent) : 'Select Agent')}
+              </span>
               <ChevronDown className="w-4 h-4" />
             </button>
             
-            {isModelDropdownOpen && (
+            {isAgentDropdownOpen && !isLoadingAgents && (
               <div className="absolute right-0 top-full mt-1 w-64 bg-dark-input border border-dark-border rounded-md shadow-lg z-50">
-                {AVAILABLE_MODELS.map((model) => (
-                  <button
-                    key={model.value}
-                    onClick={() => handleModelSelect(model.value)}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-dark-border/30 transition-colors first:rounded-t-md last:rounded-b-md ${
-                      selectedModel === model.value ? 'bg-dark-accent text-white' : 'text-dark-text'
-                    }`}
-                  >
-                    {model.label}
-                  </button>
-                ))}
+                {availableAgents.length === 0 ? (
+                  <div className="px-3 py-2 text-sm text-dark-text/60">
+                    No agents available
+                  </div>
+                ) : (
+                  availableAgents.map((agent) => (
+                    <button
+                      key={agent}
+                      onClick={() => handleAgentSelect(agent)}
+                      className={`w-full text-left px-3 py-2 text-sm hover:bg-dark-border/30 transition-colors first:rounded-t-md last:rounded-b-md ${
+                        selectedAgent === agent ? 'bg-dark-accent text-white' : 'text-dark-text'
+                      }`}
+                    >
+                      {formatAgentName(agent)}
+                    </button>
+                  ))
+                )}
               </div>
             )}
           </div>

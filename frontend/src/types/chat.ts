@@ -44,6 +44,7 @@ export interface UIMessage {
 export interface ChatMessageRequest {
   message: string;
   thread_id?: string;
+  agent?: string;
 }
 
 export interface StreamResponse {

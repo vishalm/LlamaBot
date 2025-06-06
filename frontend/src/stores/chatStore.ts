@@ -14,7 +14,9 @@ interface ChatState {
   isStreaming: boolean;
   error: string | null;
   isSidebarVisible: boolean;
-  selectedModel: string;
+  selectedAgent: string;
+  availableAgents: string[];
+  isLoadingAgents: boolean;
   
   // Actions
   loadConversations: () => Promise<void>;
@@ -24,7 +26,8 @@ interface ChatState {
   setError: (error: string | null) => void;
   clearError: () => void;
   toggleSidebar: () => void;
-  setSelectedModel: (model: string) => void;
+  setSelectedAgent: (agent: string) => void;
+  loadAvailableAgents: () => Promise<void>;
 }
 
 export const useChatStore = create<ChatState>()(
@@ -38,7 +41,9 @@ export const useChatStore = create<ChatState>()(
       isStreaming: false,
       error: null,
       isSidebarVisible: true,
-      selectedModel: 'o4-mini-2025-04-16',
+      selectedAgent: '',
+      availableAgents: [],
+      isLoadingAgents: false,
 
       // Load all conversations
       loadConversations: async () => {
@@ -138,7 +143,7 @@ export const useChatStore = create<ChatState>()(
 
       // Send a message
       sendMessage: async (message: string) => {
-        const { currentConversationId, currentMessages } = get();
+        const { currentConversationId, currentMessages, selectedAgent } = get();
         
         if (!currentConversationId) {
           set({ error: 'No conversation selected' });
@@ -177,6 +182,7 @@ export const useChatStore = create<ChatState>()(
             {
               message,
               thread_id: currentConversationId,
+              agent: selectedAgent,
             },
             (response: StreamResponse) => {
               const messages = get().currentMessages;
@@ -235,9 +241,28 @@ export const useChatStore = create<ChatState>()(
         set({ isSidebarVisible: !get().isSidebarVisible });
       },
 
-      // Set selected model
-      setSelectedModel: (model: string) => {
-        set({ selectedModel: model });
+      // Set selected agent
+      setSelectedAgent: (agent: string) => {
+        set({ selectedAgent: agent });
+      },
+
+      // Load available agents
+      loadAvailableAgents: async () => {
+        set({ isLoadingAgents: true });
+        try {
+          const agents = await apiService.getAvailableAgents();
+          set({
+            availableAgents: agents,
+            isLoadingAgents: false,
+            // Set first agent as default if none selected
+            selectedAgent: get().selectedAgent || agents[0] || ''
+          });
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to load available agents',
+            isLoadingAgents: false
+          });
+        }
       },
     }),
     {

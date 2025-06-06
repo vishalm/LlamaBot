@@ -58,6 +58,7 @@ client = Client(api_key=os.getenv("LANGSMITH_API_KEY"))
 class ChatMessage(BaseModel):
     message: str
     thread_id: str = None  # Optional thread_id parameter
+    agent: str = None  # Optional agent parameter
 
 # Application state to hold persistent checkpointer, important for session-based persistence.
 app.state.checkpointer = None
@@ -236,3 +237,10 @@ async def chat_history(thread_id: str):
     state_history = graph.get_state(config=config)
     print(state_history)
     return state_history
+
+@app.get("/available-agents", response_class=JSONResponse)
+async def available_agents():
+    # map from langgraph.json to a list of agent names
+    with open("../langgraph.json", "r") as f:
+        langgraph_json = json.load(f)
+    return {"agents": list(langgraph_json["graphs"].keys())}

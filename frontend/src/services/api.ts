@@ -129,6 +129,12 @@ class ApiService {
     const randomComponent = Math.random().toString(36).substring(2, 8);
     return `thread_${timestamp}_${randomComponent}`;
   }
+
+  // Fetch available agents
+  async getAvailableAgents(): Promise<string[]> {
+    const response = await api.get<{ agents: string[] }>('/available-agents');
+    return response.data.agents;
+  }
 }
 
 export const apiService = new ApiService();
