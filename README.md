@@ -56,19 +56,37 @@ Perfect for:
 ## 🏗️ Project Structure
 
 ```
-LlamaBotSimple/
-├── app.py                          # FastAPI application with streaming endpoints
+LlamaBot/
+├── README.md                       # Project documentation
+├── LICENSE                         # MIT License
 ├── requirements.txt                # Python dependencies
 ├── langgraph.json                  # LangGraph configuration
-├── chat_app.log                    # Application logs
+├── chat_app.log                    # Application logs (root level)
+├── page.html                       # Generated content display (root level)
 │
-├── Simple Version Files:
-├── chat.html                       # Simple chat interface UI
-├── home.html                       # Landing page
-├── page.html                       # Generated content display
+├── backend/                        # Backend application directory
+│   ├── app.py                      # FastAPI application with streaming endpoints
+│   ├── chat_app.log                # Backend-specific application logs
+│   ├── chat.html                   # Simple chat interface UI
+│   ├── home.html                   # Landing page
+│   ├── page.html                   # Generated content display
+│   ├── conversations.html          # Conversation history interface
+│   │
+│   └── agents/                     # AI agent implementations
+│       ├── __init__.py
+│       ├── base_agent.py           # Base agent functionality
+│       ├── react_agent/
+│       │   └── nodes.py            # ReACT workflow implementation
+│       ├── write_html_agent/       # Archived for educational purposes. v1.
+│       │   ├── nodes.py            # Main workflow orchestration
+│       │   ├── state.py            # Agent state definition
+│       │   ├── design_and_plan.py  # Planning and design logic
+│       │   ├── write_html_code.py  # HTML/CSS/JS generation in 1 file.
+│       │   ├── respond_naturally.py # Natural language responses
+│       │   └── route_initial_user_message.py  # Initial message routing
+│       └── utils/                  # Shared utilities
 │
-├── Modern Frontend (Optional):
-├── frontend/                       # React + TypeScript frontend
+├── frontend/                       # React + TypeScript frontend (Optional)
 │   ├── src/
 │   │   ├── components/             # React components
 │   │   ├── stores/                 # Zustand state management
@@ -80,21 +98,6 @@ LlamaBotSimple/
 │   ├── tsconfig.json
 │   ├── vite.config.ts
 │   └── tailwind.config.js
-│
-├── Backend Core:
-├── agents/
-│   ├── __init__.py
-│   ├── base_agent.py               # Base agent functionality
-│   ├── react_agent/
-│   │   └── nodes.py                # ReACT workflow implementation
-│   ├── write_html_agent/           # Archived for educational purposes. v1.
-│   │   ├── nodes.py                # Main workflow orchestration
-│   │   ├── state.py                # Agent state definition
-│   │   ├── design_and_plan.py      # Planning and design logic
-│   │   ├── write_html_code.py      # HTML/CSS/JS generation in 1 file.
-│   │   ├── respond_naturally.py    # Natural language responses
-│   │   └── route_initial_user_message.py  # Initial message routing
-│   └── utils/                      # Shared utilities
 │
 ├── assets/                         # Static assets (CSS, JS, images)
 ├── docs/                           # Documentation
@@ -143,7 +146,8 @@ GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO langgraph_user;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO langgraph_user;
 "
 
-# 6 — Run it
+# 6 — Navigate to backend and run it
+cd backend
 uvicorn app:app --reload
 ```
 
@@ -158,7 +162,8 @@ Browse to http://localhost:8000/chat and start building!
 
 **Backend Setup:**
 ```bash
-# Follow steps 1-6 from Option 1 above
+# Follow steps 1-5 from Option 1 above, then:
+cd backend
 uvicorn app:app --reload --host 0.0.0.0 --port 8000
 ```
 
@@ -179,7 +184,7 @@ EOF
 npm run dev
 ```
 
-Open your browser to `http://localhost:3000` for the modern React interface!
+Open your browser to `http://localhost:3001` for the modern React interface!
 
 ---
 
@@ -272,6 +277,7 @@ Open your browser to `http://localhost:3000` for the modern React interface!
 
 ### Simple Version Development
 ```bash
+cd backend
 uvicorn app:app --reload  # Start with auto-reload
 ```
 
@@ -288,6 +294,7 @@ npm run preview    # Preview production build
 
 **Backend:**
 ```bash
+cd backend
 uvicorn app:app --reload --host 0.0.0.0 --port 8000
 ```
 
