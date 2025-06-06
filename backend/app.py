@@ -14,6 +14,7 @@ from datetime import datetime
 from agents.react_agent.nodes import build_workflow
 from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.checkpoint.memory import MemorySaver
+from langgraph.checkpoint.base import CheckpointTuple
 from psycopg_pool import ConnectionPool
 
 from langsmith import Client
@@ -34,20 +35,17 @@ load_dotenv()
 
 app = FastAPI()
 
-# Add CORS middleware to allow streaming from any origin
+# Add CORS middleware for React frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3001", "http://127.0.0.1:3001"],  # React dev server
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Mount the examples directory to serve example files
-app.mount("/examples", StaticFiles(directory="examples"), name="examples")
-
-# Mount the assets directory to serve static assets (images, audio, .glb files, etc.)
-app.mount("/assets", StaticFiles(directory="assets"), name="assets")
+# Mount static directories
+app.mount("/assets", StaticFiles(directory="../assets"), name="assets")
 
 # Initialize the ChatOpenAI client
 llm = ChatOpenAI(
@@ -59,6 +57,7 @@ client = Client(api_key=os.getenv("LANGSMITH_API_KEY"))
 # Pydantic model for chat request
 class ChatMessage(BaseModel):
     message: str
+    thread_id: str = None  # Optional thread_id parameter
 
 # Application state to hold persistent checkpointer, important for session-based persistence.
 app.state.checkpointer = None
@@ -96,7 +95,7 @@ async def chat_message(chat_message: ChatMessage):
     
     # Get the existing HTML content from page.html
     try:
-        with open("page.html", "r") as f:
+        with open("../page.html", "r") as f:
             existing_html_content = f.read()
     except FileNotFoundError:
         existing_html_content = ""
@@ -112,7 +111,9 @@ async def chat_message(chat_message: ChatMessage):
                 "request_id": request_id
             }) + "\n"
 
-            thread_id = "5"
+            # Use the provided thread_id or default to "5"
+            thread_id = chat_message.thread_id or "5"
+            logger.info(f"[{request_id}] Using thread_id: {thread_id}")
             
             checkpointer = get_or_create_checkpointer()
             graph = build_workflow(checkpointer=checkpointer)
@@ -149,10 +150,7 @@ async def chat_message(chat_message: ChatMessage):
                             # Log the streaming output
                             logger.info(f"[{request_id}] Stream update from {langgraph_node_info['langgraph_node']}: {str(message_from_llm)[:100]}...")
 
-
-                            #TODO: Broken. Type: "update" is needed for the live preview to work.
-                            ## BUT, type: "message" is needed for the chat to work.
-                            # Send node update
+                            # Send streaming update for React frontend
                             yield json.dumps({
                                 "type": "update",
                                 "node": langgraph_node_info['langgraph_node'],
@@ -169,12 +167,10 @@ async def chat_message(chat_message: ChatMessage):
                             # Log the streaming output
                             logger.info(f"[{request_id}] Stream update from {node}: {str(value)[:100]}...")
 
-                            # Send node update
-                            yield json.dumps({
-                                "type": "not_update", #TODO: This has no impact on the front-end right now. This update_stream_type
-                                "node": node_step_name,
-                                "value": str(updated_langgraph_state_object)  # Convert value to string for safety
-                            }) + "\n"
+                            # Store final state for the final response
+                            if 'messages' in updated_langgraph_state_object:
+                                final_state = updated_langgraph_state_object
+
                     else:
                         # Handle other formats or just log
                         logger.info(f"[{request_id}] Received chunk in unknown format: {type(chunk)}")
@@ -187,11 +183,12 @@ async def chat_message(chat_message: ChatMessage):
             }) + "\n"
         finally:
             logger.info(f"[{request_id}] Stream completed")
-            # Send final update telling agent we're done
+            # Send final update with complete messages
             yield json.dumps({
-                "type": "final", #TODO: This update_stream_type
+                "type": "final",
                 "node": "final",
-                "value": "final"  # Convert value to string for safety
+                "value": "final",
+                "messages": final_state.get("messages", []) if final_state else []
             }) + "\n"
 
     # Return a streaming response
@@ -207,9 +204,30 @@ async def chat():
 
 @app.get("/page", response_class=HTMLResponse)
 async def page():
-    with open("page.html") as f:
+    with open("../page.html") as f:
         return f.read()
     
+@app.get("/conversations", response_class=HTMLResponse)
+async def conversations():
+    with open("conversations.html") as f:
+        return f.read()
+
+@app.get("/threads", response_class=JSONResponse)
+async def threads():
+    checkpointer = get_or_create_checkpointer()
+    config = {}
+    checkpoint_generator = checkpointer.list(config=config)
+    all_checkpoints :list[CheckpointTuple] = list(checkpoint_generator) #convert to list
+    
+    # reduce only to the unique thread_ids  
+    unique_thread_ids = list(set([checkpoint[0]["configurable"]["thread_id"] for checkpoint in all_checkpoints]))
+    state_history = []
+    for thread_id in unique_thread_ids:
+        graph = build_workflow(checkpointer=checkpointer)
+        config = {"configurable": {"thread_id": thread_id}}
+        state_history.append({"thread_id": thread_id, "state": graph.get_state(config=config)})
+    return state_history
+
 @app.get("/chat-history/{thread_id}")
 async def chat_history(thread_id: str):
     checkpointer = get_or_create_checkpointer()
